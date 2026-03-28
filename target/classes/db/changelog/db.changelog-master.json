@@ -1,0 +1,18 @@
+{
+  "databaseChangeLog": [
+    {
+      "changeSet": {
+        "id": "1-core-service-schema",
+        "author": "landgo",
+        "changes": [
+          {"sql": {"sql": "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"}},
+          {"sql": {"sql": "CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), email VARCHAR(255) NOT NULL UNIQUE, full_name VARCHAR(255), profile_image_url VARCHAR(500), deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"}},
+          {"sql": {"sql": "CREATE TABLE IF NOT EXISTS lands (id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), vendor_id UUID NOT NULL, project_stage VARCHAR(50) NOT NULL, status VARCHAR(50) NOT NULL DEFAULT 'PENDING_APPROVAL', address VARCHAR(255) NOT NULL, city VARCHAR(100) NOT NULL, postal_code VARCHAR(20) NOT NULL, lot_size DECIMAL(15,2) NOT NULL, lot_unit VARCHAR(20) NOT NULL, frontage VARCHAR(50), depth VARCHAR(50), current_zoning_codes VARCHAR(255), pin_number VARCHAR(50), official_plan_designation VARCHAR(255), latitude DECIMAL(10,8), longitude DECIMAL(11,8), project_specification JSONB, asking_price DECIMAL(15,2) NOT NULL, currency VARCHAR(10) NOT NULL DEFAULT 'CAD', pricing_description TEXT, photos JSONB, documents JSONB, ownership_verification VARCHAR(500), view_count INTEGER DEFAULT 0, inquiry_count INTEGER DEFAULT 0, deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_land_vendor ON lands(vendor_id); CREATE INDEX IF NOT EXISTS idx_land_status ON lands(status); CREATE INDEX IF NOT EXISTS idx_land_city ON lands(city);"}},
+          {"sql": {"sql": "CREATE TABLE IF NOT EXISTS listing_drafts (id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), owner_id UUID NOT NULL REFERENCES users(id), status VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS', current_step INTEGER DEFAULT 0, step1_data JSONB, step2_data JSONB, step3_data JSONB, step4_data JSONB, step5_data JSONB, published_listing_id UUID REFERENCES lands(id), deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"}},
+          {"sql": {"sql": "CREATE TABLE IF NOT EXISTS reviews (id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), professional_id UUID NOT NULL REFERENCES vendor_profiles(id), author_id UUID NOT NULL REFERENCES users(id), rating INTEGER NOT NULL, title VARCHAR(200) NOT NULL, content TEXT NOT NULL, deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(author_id, professional_id));"}},
+          {"sql": {"sql": "CREATE TABLE IF NOT EXISTS saved_searches (id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID NOT NULL REFERENCES users(id), name VARCHAR(100) NOT NULL, keyword VARCHAR(200), city VARCHAR(100), project_stage VARCHAR(30), min_price DECIMAL(15,2), max_price DECIMAL(15,2), min_lot_size DECIMAL(15,2), max_lot_size DECIMAL(15,2), notifications_enabled BOOLEAN DEFAULT TRUE, match_count INTEGER DEFAULT 0, last_notified_at TIMESTAMP, deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"}}
+        ]
+      }
+    }
+  ]
+}
