@@ -5,7 +5,7 @@ spring:
   application:
     name: core-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/landgo_core
+    url: jdbc:postgresql://localhost:5432/landgo?currentSchema=core
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -15,9 +15,11 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: core
     open-in-view: false
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.json
+    default-schema: core
 
 app:
   jwt:
