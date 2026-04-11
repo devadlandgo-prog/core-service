@@ -1,0 +1,6 @@
+.DS_Store
+user-service/
+core-service/
+payment-service/
+api-gateway/
+landgo-dev-utils/
