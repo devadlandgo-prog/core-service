@@ -15,6 +15,6 @@ public interface VendorMapper {
     @Mapping(target = "deleted", ignore = true) @Mapping(target = "user", ignore = true)
     @Mapping(target = "verified", constant = "false") @Mapping(target = "rating", ignore = true)
     @Mapping(target = "totalReviews", constant = "0") @Mapping(target = "totalLandsListed", constant = "0")
-    @Mapping(target = "totalLandsSold", constant = "0") @Mapping(target = "lands", ignore = true)
+    @Mapping(target = "totalLandsSold", constant = "0")
     VendorProfile toEntity(VendorRegisterRequest request);
 }
