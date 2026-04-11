@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/drafts")
+@RequestMapping("/listings/drafts")
 @RequiredArgsConstructor
 public class DraftController {
 
@@ -28,7 +28,7 @@ public class DraftController {
                 .body(ApiResponse.success("Draft created successfully", draft));
     }
 
-    @PutMapping("/{draftId}/steps")
+    @PatchMapping("/{draftId}")
     public ResponseEntity<ApiResponse<DraftResponse>> updateDraftStep(
             @CurrentUser UUID userId,
             @PathVariable UUID draftId,

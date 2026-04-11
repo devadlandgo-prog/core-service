@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/saved-searches")
+@RequestMapping("/listings/saved-searches")
 @RequiredArgsConstructor
 public class SavedSearchController {
 

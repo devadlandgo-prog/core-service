@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/reviews")
+@RequestMapping("/professionals/{professionalId}/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
 
     private final ReviewService reviewService;
 
-    @PostMapping("/professional/{professionalId}")
+    @PostMapping
     public ResponseEntity<ApiResponse<ReviewResponse>> createReview(
             @CurrentUser UUID userId,
             @PathVariable UUID professionalId,
@@ -31,7 +31,7 @@ public class ReviewController {
                 .body(ApiResponse.success("Review submitted successfully", review));
     }
 
-    @GetMapping("/professional/{professionalId}")
+    @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ReviewResponse>>> getReviewsForProfessional(
             @PathVariable UUID professionalId,
             @RequestParam(defaultValue = "0") int page,

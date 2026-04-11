@@ -9,10 +9,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/vendors")
+@RequestMapping("/professionals")
 @RequiredArgsConstructor
 public class VendorController {
 
@@ -23,12 +24,6 @@ public class VendorController {
             @PathVariable UUID id,
             @CurrentUser UUID userId) {
         VendorResponse vendor = vendorService.getVendorById(id, userId);
-        return ResponseEntity.ok(ApiResponse.success(vendor));
-    }
-
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<VendorResponse>> getMyVendorProfile(@CurrentUser UUID userId) {
-        VendorResponse vendor = vendorService.getMyVendorProfile(userId);
         return ResponseEntity.ok(ApiResponse.success(vendor));
     }
 
@@ -47,5 +42,57 @@ public class VendorController {
             @RequestParam(defaultValue = "20") int size) {
         PageResponse<VendorResponse> vendors = vendorService.searchVendors(q, page, size);
         return ResponseEntity.ok(ApiResponse.success(vendors));
+    }
+
+    @GetMapping("/subscription-plans")
+    public ResponseEntity<ApiResponse<java.util.List<Map<String, Object>>>> getSubscriptionPlans() {
+        java.util.List<Map<String, Object>> plans = java.util.List.of(
+                Map.of(
+                        "id", "basic",
+                        "name", "Basic",
+                        "description", "Starter plan for professionals",
+                        "monthlyPrice", java.math.BigDecimal.valueOf(19.99),
+                        "annualPrice", java.math.BigDecimal.valueOf(199.99),
+                        "currency", "USD",
+                        "features", java.util.List.of("Standard listing exposure"),
+                        "isPopular", false
+                ),
+                Map.of(
+                        "id", "professional",
+                        "name", "Professional",
+                        "description", "Growth plan for active professionals",
+                        "monthlyPrice", java.math.BigDecimal.valueOf(49.99),
+                        "annualPrice", java.math.BigDecimal.valueOf(499.99),
+                        "currency", "USD",
+                        "features", java.util.List.of("Priority placement", "Lead insights"),
+                        "isPopular", true
+                ),
+                Map.of(
+                        "id", "enterprise",
+                        "name", "Enterprise",
+                        "description", "Advanced plan for teams",
+                        "monthlyPrice", java.math.BigDecimal.valueOf(99.99),
+                        "annualPrice", java.math.BigDecimal.valueOf(999.99),
+                        "currency", "USD",
+                        "features", java.util.List.of("Dedicated support", "Advanced analytics"),
+                        "isPopular", false
+                )
+        );
+        return ResponseEntity.ok(ApiResponse.success(plans));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<VendorResponse>> registerProfessional(@CurrentUser UUID userId) {
+        VendorResponse vendor = vendorService.getMyVendorProfile(userId);
+        return ResponseEntity.ok(ApiResponse.success("Professional profile ready", vendor));
+    }
+
+    @PostMapping("/subscribe")
+    public ResponseEntity<ApiResponse<Map<String, String>>> subscribeProfessional() {
+        Map<String, String> payload = Map.of(
+                "paymentIntentId", "pi_placeholder",
+                "clientSecret", "cs_placeholder"
+        );
+        return ResponseEntity.ok(ApiResponse.success(payload));
     }
 }

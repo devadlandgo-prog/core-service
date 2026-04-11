@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/lands")
+@RequestMapping("/listings")
 @RequiredArgsConstructor
 public class LandController {
 
@@ -69,7 +69,7 @@ public class LandController {
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
-    @GetMapping("/vendor/{vendorId}")
+    @GetMapping("/professional/{vendorId}")
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getVendorLands(
             @PathVariable UUID vendorId,
             @RequestParam(defaultValue = "0") int page,
@@ -78,7 +78,7 @@ public class LandController {
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
-    @GetMapping("/my-listings")
+    @GetMapping("/my")
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getMyListings(
             @CurrentUser UUID userId,
             @RequestParam(defaultValue = "0") int page,
