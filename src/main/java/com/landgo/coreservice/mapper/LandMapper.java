@@ -28,10 +28,9 @@ public class LandMapper {
                 .ownershipVerification(land.getOwnershipVerification())
                 .viewCount(land.getViewCount()).inquiryCount(land.getInquiryCount())
                 .createdAt(land.getCreatedAt()).updatedAt(land.getUpdatedAt());
-        if (land.getVendor() != null) {
-            builder.vendorId(land.getVendor().getId())
-                   .vendorCompanyName(land.getVendor().getCompanyName())
-                   .vendorVerified(land.getVendor().isVerified());
+        
+        if (land.getVendorId() != null) {
+            builder.vendorId(land.getVendorId());
         }
         return builder.build();
     }

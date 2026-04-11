@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -19,7 +20,7 @@ public class UserServiceClient {
     @Value("${app.services.user-service-url:http://localhost:8081}")
     private String userServiceUrl;
 
-    @Value("${app.services.payment-service-url:http://localhost:8082}")
+    @Value("${app.services.payment-service-url:http://localhost:8083}")
     private String paymentServiceUrl;
 
     public UserResponse getUserById(UUID userId) {
@@ -40,11 +41,11 @@ public class UserServiceClient {
 
     public boolean hasActiveSubscription(UUID userId) {
         try {
-            Boolean hasAccess = restTemplate.getForObject(
-                paymentServiceUrl + "/internal/subscriptions/check-query-access?userId=" + userId,
-                Boolean.class
+            Map<?, ?> response = restTemplate.getForObject(
+                paymentServiceUrl + "/internal/subscriptions/user/" + userId + "/active", 
+                Map.class
             );
-            return Boolean.TRUE.equals(hasAccess);
+            return response != null && Boolean.TRUE.equals(response.get("active"));
         } catch (RestClientException e) {
             return false;
         }
