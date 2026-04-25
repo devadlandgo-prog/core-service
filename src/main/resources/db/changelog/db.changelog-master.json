@@ -10,7 +10,9 @@
               "sql": "CREATE SCHEMA IF NOT EXISTS core;"
             }
           }
-        ]
+        ],
+        "runOnChange": true,
+        "failOnError": false
       }
     },
     {
