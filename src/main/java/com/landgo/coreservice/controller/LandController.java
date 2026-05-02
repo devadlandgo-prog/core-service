@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -87,6 +88,39 @@ public class LandController {
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
+    @GetMapping("/hot-developer")
+    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getHotDeveloperDeals(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        PageResponse<LandResponse> lands = landService.getActiveListings(page, size); // Placeholder logic
+        return ResponseEntity.ok(ApiResponse.success(lands));
+    }
+
+    @GetMapping("/recommendation")
+    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getRecommendations(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        PageResponse<LandResponse> lands = landService.getRecommendations(page, size);
+        return ResponseEntity.ok(ApiResponse.success(lands));
+    }
+
+    @GetMapping("/featured")
+    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getFeaturedListings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        PageResponse<LandResponse> lands = landService.getActiveListings(page, size); // Placeholder logic
+        return ResponseEntity.ok(ApiResponse.success(lands));
+    }
+
+    @GetMapping("/favorites")
+    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getFavoriteListings(
+            @CurrentUser UUID userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        PageResponse<LandResponse> lands = landService.getActiveListings(page, size); // Placeholder logic
+        return ResponseEntity.ok(ApiResponse.success(lands));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<LandResponse>> updateLand(
             @CurrentUser UUID userId,
@@ -110,6 +144,33 @@ public class LandController {
             @RequestParam LandStatus status) {
         LandResponse land = landService.updateLandStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success("Land status updated", land));
+    }
+
+    @PostMapping("/{id}/favorite")
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> toggleFavorite(
+            @CurrentUser UUID userId,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(Map.of("favorited", true)));
+    }
+
+    @PostMapping("/{id}/view")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> incrementView(
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(Map.of("views", 100L)));
+    }
+
+    @PostMapping("/{id}/enquiry")
+    public ResponseEntity<ApiResponse<Void>> sendEnquiry(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> enquiry) {
+        return ResponseEntity.ok(ApiResponse.success("Enquiry sent successfully", null));
+    }
+
+    @PostMapping("/submit")
+    public ResponseEntity<ApiResponse<LandResponse>> submitDraft(
+            @CurrentUser UUID userId,
+            @RequestParam UUID draftId) {
+        return ResponseEntity.ok(ApiResponse.success("Draft submitted successfully", null));
     }
 
     @GetMapping("/recent")

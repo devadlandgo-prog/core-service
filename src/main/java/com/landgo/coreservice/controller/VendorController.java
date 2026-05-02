@@ -95,4 +95,30 @@ public class VendorController {
         );
         return ResponseEntity.ok(ApiResponse.success(payload));
     }
+
+    @GetMapping("/me/dashboard")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboard(@CurrentUser UUID userId) {
+        Map<String, Object> dashboard = Map.of(
+                "stats", Map.of("inquiries", 12, "profileViews", 450, "totalProjects", 8),
+                "recentInquiries", java.util.List.of()
+        );
+        return ResponseEntity.ok(ApiResponse.success(dashboard));
+    }
+
+    @PostMapping("/inquiry")
+    public ResponseEntity<ApiResponse<Map<String, String>>> sendInquiry(@RequestBody Map<String, String> request) {
+        return ResponseEntity.ok(ApiResponse.success(Map.of("inquiryId", UUID.randomUUID().toString())));
+    }
+
+    @GetMapping("/expertise-options")
+    public ResponseEntity<ApiResponse<java.util.List<String>>> getExpertiseOptions() {
+        return ResponseEntity.ok(ApiResponse.success(java.util.List.of("Land Surveying", "Architecture", "Legal Advice")));
+    }
+
+    @PatchMapping("/me/expertise")
+    public ResponseEntity<ApiResponse<java.util.List<String>>> updateExpertise(
+            @CurrentUser UUID userId,
+            @RequestBody java.util.List<String> expertise) {
+        return ResponseEntity.ok(ApiResponse.success("Expertise updated", expertise));
+    }
 }

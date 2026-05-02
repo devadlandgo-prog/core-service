@@ -52,6 +52,29 @@
           }
         ]
       }
+    },
+    {
+      "changeSet": {
+        "id": "2-add-favorites-and-inquiries",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO core; CREATE TABLE IF NOT EXISTS favorite_listings (id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES users(id), land_id UUID NOT NULL REFERENCES lands(id) ON DELETE CASCADE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, land_id)); CREATE INDEX IF NOT EXISTS idx_fav_user ON favorite_listings(user_id);"
+            }
+          },
+          {
+            "sql": {
+              "sql": "SET search_path TO core; CREATE TABLE IF NOT EXISTS inquiries (id UUID PRIMARY KEY, listing_id UUID REFERENCES lands(id) ON DELETE CASCADE, professional_id UUID REFERENCES vendor_profiles(user_id) ON DELETE CASCADE, sender_name VARCHAR(255) NOT NULL, sender_email VARCHAR(255) NOT NULL, message TEXT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_inq_listing ON inquiries(listing_id); CREATE INDEX IF NOT EXISTS idx_inq_prof ON inquiries(professional_id);"
+            }
+          },
+          {
+            "sql": {
+              "sql": "SET search_path TO core; ALTER TABLE lands ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT FALSE, ADD COLUMN IF NOT EXISTS is_developer_deal BOOLEAN NOT NULL DEFAULT FALSE;"
+            }
+          }
+        ]
+      }
     }
   ]
 }

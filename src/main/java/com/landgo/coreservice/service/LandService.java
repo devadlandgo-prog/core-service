@@ -76,6 +76,14 @@ public class LandService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<LandResponse> getRecommendations(int page, int size) {
+        // Sort by asking price descending (highest price first)
+        Pageable pageable = PageRequest.of(page, size, Sort.by("askingPrice").descending());
+        Page<Land> lands = landRepository.findByStatusAndDeletedFalse(LandStatus.ACTIVE, pageable);
+        return buildPageResponse(lands);
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<LandResponse> searchLands(String search, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Land> lands = landRepository.searchLands(search, pageable);
@@ -110,9 +118,9 @@ public class LandService {
         Land land = landRepository.findByIdAndDeletedFalse(landId)
                 .orElseThrow(() -> new ResourceNotFoundException("Land", "id", landId));
 
-        if (!land.getVendorId().equals(userId)) {
-             // Basic check: In microservices, complex auth often happens at Gateway or via shared JWT claims
-             // For now, aligning with previous logic where userId was compared.
+        VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
+        if (vendor == null || !land.getVendorId().equals(vendor.getId())) {
+            throw new ForbiddenException("You are not authorized to update this listing");
         }
 
         landMapper.updateEntity(request, land);
@@ -124,6 +132,11 @@ public class LandService {
     public void deleteLand(UUID userId, UUID landId) {
         Land land = landRepository.findByIdAndDeletedFalse(landId)
                 .orElseThrow(() -> new ResourceNotFoundException("Land", "id", landId));
+
+        VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
+        if (vendor == null || !land.getVendorId().equals(vendor.getId())) {
+            throw new ForbiddenException("You are not authorized to delete this listing");
+        }
 
         land.setDeleted(true);
         landRepository.save(land);
