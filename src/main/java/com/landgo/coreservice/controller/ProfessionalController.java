@@ -17,10 +17,12 @@ public class ProfessionalController {
     private final LandService landService;
 
     @PatchMapping("/{id}/verify")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> verifyProfessional(
             @PathVariable UUID id,
-            @RequestParam VerificationStatus status) {
-        landService.updateProfessionalVerificationStatus(id, status);
+            @RequestParam VerificationStatus status,
+            @RequestParam(required = false) String notes) {
+        landService.updateProfessionalVerificationStatus(id, status, notes);
         return ResponseEntity.ok(ApiResponse.success("Professional verification status updated", null));
     }
 }

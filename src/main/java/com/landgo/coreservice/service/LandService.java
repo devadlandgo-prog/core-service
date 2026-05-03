@@ -181,17 +181,18 @@ public class LandService {
                 .collect(Collectors.toList());
 
         return PageResponse.<LandResponse>builder()
-                .data(content).page(favorites.getNumber()).pageSize(favorites.getSize())
-                .total(favorites.getTotalElements()).totalPages(favorites.getTotalPages())
+                .content(content).number(favorites.getNumber()).size(favorites.getSize())
+                .totalElements(favorites.getTotalElements()).totalPages(favorites.getTotalPages())
                 .first(favorites.isFirst()).last(favorites.isLast()).build();
     }
 
     @Transactional
-    public void updateProfessionalVerificationStatus(UUID id, com.landgo.coreservice.enums.VerificationStatus status) {
+    public void updateProfessionalVerificationStatus(UUID id, com.landgo.coreservice.enums.VerificationStatus status, String notes) {
         com.landgo.coreservice.entity.VendorProfile vendor = vendorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "id", id));
         vendor.setVerificationStatus(status);
         vendor.setVerified(status == com.landgo.coreservice.enums.VerificationStatus.APPROVED);
+        vendor.setVerificationNotes(notes);
         vendorRepository.save(vendor);
     }
 
@@ -220,8 +221,8 @@ public class LandService {
     private PageResponse<LandResponse> buildPageResponse(Page<Land> page) {
         List<LandResponse> content = page.getContent().stream().map(landMapper::toResponse).collect(Collectors.toList());
         return PageResponse.<LandResponse>builder()
-                .data(content).page(page.getNumber()).pageSize(page.getSize())
-                .total(page.getTotalElements()).totalPages(page.getTotalPages())
+                .content(content).number(page.getNumber()).size(page.getSize())
+                .totalElements(page.getTotalElements()).totalPages(page.getTotalPages())
                 .first(page.isFirst()).last(page.isLast()).build();
     }
 }

@@ -25,4 +25,8 @@ public class Review extends BaseEntity {
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @ElementCollection @CollectionTable(name = "review_tags", joinColumns = @JoinColumn(name = "review_id")) @Column(name = "tag") private java.util.List<String> tags;
+    @ElementCollection @CollectionTable(name = "review_photos", joinColumns = @JoinColumn(name = "review_id")) @Column(name = "photo_url") private java.util.List<String> photos;
+    @Column(name = "verified_purchase") @Builder.Default private boolean verifiedPurchase = false;
 }

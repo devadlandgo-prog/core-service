@@ -75,8 +75,8 @@ public class SavedSearchService {
                 .map(savedSearchMapper::toResponse).collect(Collectors.toList());
 
         return PageResponse.<SavedSearchResponse>builder()
-                .data(content).page(searches.getNumber()).pageSize(searches.getSize())
-                .total(searches.getTotalElements()).totalPages(searches.getTotalPages())
+                .content(content).number(searches.getNumber()).size(searches.getSize())
+                .totalElements(searches.getTotalElements()).totalPages(searches.getTotalPages())
                 .first(searches.isFirst()).last(searches.isLast()).build();
     }
 

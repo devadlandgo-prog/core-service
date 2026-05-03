@@ -142,6 +142,7 @@ public class LandController {
     }
 
     @PatchMapping("/{id}/status")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<LandResponse>> updateLandStatus(
             @PathVariable UUID id,
             @RequestParam LandStatus status) {
@@ -166,12 +167,12 @@ public class LandController {
     @PostMapping("/{id}/enquiry")
     public ResponseEntity<ApiResponse<Void>> sendEnquiry(
             @PathVariable UUID id,
-            @RequestBody Map<String, String> enquiry) {
+            @Valid @RequestBody com.landgo.coreservice.dto.request.EnquiryRequest request) {
         enquiryService.createEnquiry(
             id, 
-            enquiry.get("name"), 
-            enquiry.get("email"), 
-            enquiry.get("message")
+            request.getName(), 
+            request.getEmail(), 
+            request.getMessage()
         );
         return ResponseEntity.ok(ApiResponse.success("Enquiry sent successfully", null));
     }

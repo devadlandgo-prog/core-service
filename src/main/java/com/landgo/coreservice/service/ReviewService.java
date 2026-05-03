@@ -57,6 +57,9 @@ public class ReviewService {
                 .rating(request.getRating())
                 .title(request.getTitle())
                 .content(request.getContent())
+                .tags(request.getTags())
+                .photos(request.getPhotos())
+                .verifiedPurchase(false) // Logic for verified purchase can be added later
                 .build();
 
         Review saved = reviewRepository.save(review);
@@ -71,8 +74,8 @@ public class ReviewService {
         Page<Review> reviews = reviewRepository.findByProfessionalId(professionalId, pageable);
         List<ReviewResponse> content = reviews.getContent().stream().map(this::toResponse).collect(Collectors.toList());
         return PageResponse.<ReviewResponse>builder()
-                .data(content).page(reviews.getNumber()).pageSize(reviews.getSize())
-                .total(reviews.getTotalElements()).totalPages(reviews.getTotalPages())
+                .content(content).number(reviews.getNumber()).size(reviews.getSize())
+                .totalElements(reviews.getTotalElements()).totalPages(reviews.getTotalPages())
                 .first(reviews.isFirst()).last(reviews.isLast()).build();
     }
 
@@ -112,6 +115,9 @@ public class ReviewService {
                 .rating(review.getRating())
                 .title(review.getTitle())
                 .content(review.getContent())
+                .tags(review.getTags())
+                .photos(review.getPhotos())
+                .verifiedPurchase(review.isVerifiedPurchase())
                 .createdAt(review.getCreatedAt())
                 .build();
     }
