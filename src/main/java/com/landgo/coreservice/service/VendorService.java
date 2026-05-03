@@ -92,8 +92,8 @@ public class VendorService {
     private PageResponse<VendorResponse> buildPageResponse(Page<VendorProfile> page) {
         List<VendorResponse> content = page.getContent().stream().map(vendorMapper::toResponse).collect(Collectors.toList());
         return PageResponse.<VendorResponse>builder()
-                .content(content).pageNumber(page.getNumber()).pageSize(page.getSize())
-                .totalElements(page.getTotalElements()).totalPages(page.getTotalPages())
+                .data(content).page(page.getNumber()).pageSize(page.getSize())
+                .total(page.getTotalElements()).totalPages(page.getTotalPages())
                 .first(page.isFirst()).last(page.isLast()).build();
     }
 }
