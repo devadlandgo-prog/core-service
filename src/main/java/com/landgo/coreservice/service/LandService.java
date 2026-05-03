@@ -5,13 +5,17 @@ import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.dto.response.VendorResponse;
 import com.landgo.coreservice.entity.Land;
+import com.landgo.coreservice.entity.FavoriteListing;
+import com.landgo.coreservice.entity.User;
 import com.landgo.coreservice.enums.LandStatus;
 import com.landgo.coreservice.enums.ProjectStage;
 import com.landgo.coreservice.exception.BadRequestException;
 import com.landgo.coreservice.exception.ForbiddenException;
 import com.landgo.coreservice.exception.ResourceNotFoundException;
 import com.landgo.coreservice.mapper.LandMapper;
+import com.landgo.coreservice.repository.FavoriteListingRepository;
 import com.landgo.coreservice.repository.LandRepository;
+import com.landgo.coreservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +36,8 @@ import java.util.stream.Collectors;
 public class LandService {
 
     private final LandRepository landRepository;
+    private final FavoriteListingRepository favoriteRepository;
+    private final UserRepository userRepository;
     private final UserServiceClient userServiceClient;
     private final LandMapper landMapper;
 
@@ -162,6 +168,43 @@ public class LandService {
     public List<LandResponse> getPopularListings(int limit) {
         return landRepository.findPopularListings(PageRequest.of(0, limit))
                 .stream().map(landMapper::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<LandResponse> getFavoriteListings(UUID userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<FavoriteListing> favorites = favoriteRepository.findByUserId(userId, pageable);
+        
+        List<LandResponse> content = favorites.getContent().stream()
+                .map(f -> landMapper.toResponse(f.getLand()))
+                .collect(Collectors.toList());
+
+        return PageResponse.<LandResponse>builder()
+                .content(content).pageNumber(favorites.getNumber()).pageSize(favorites.getSize())
+                .totalElements(favorites.getTotalElements()).totalPages(favorites.getTotalPages())
+                .first(favorites.isFirst()).last(favorites.isLast()).build();
+    }
+
+    @Transactional
+    public boolean toggleFavorite(UUID userId, UUID landId) {
+        Land land = landRepository.findByIdAndDeletedFalse(landId)
+                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", landId));
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        return favoriteRepository.findByUserIdAndLandId(userId, landId)
+                .map(f -> {
+                    favoriteRepository.delete(f);
+                    return false;
+                })
+                .orElseGet(() -> {
+                    favoriteRepository.save(FavoriteListing.builder()
+                            .user(user)
+                            .land(land)
+                            .build());
+                    return true;
+                });
     }
 
     private PageResponse<LandResponse> buildPageResponse(Page<Land> page) {

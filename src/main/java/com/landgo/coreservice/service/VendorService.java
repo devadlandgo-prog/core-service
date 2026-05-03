@@ -1,11 +1,14 @@
 package com.landgo.coreservice.service;
 
+import com.landgo.coreservice.dto.request.VendorRegisterRequest;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.dto.response.VendorResponse;
+import com.landgo.coreservice.entity.User;
 import com.landgo.coreservice.entity.VendorProfile;
 import com.landgo.coreservice.exception.ForbiddenException;
 import com.landgo.coreservice.exception.ResourceNotFoundException;
 import com.landgo.coreservice.mapper.VendorMapper;
+import com.landgo.coreservice.repository.UserRepository;
 import com.landgo.coreservice.repository.VendorRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
 public class VendorService {
 
     private final VendorRepository vendorRepository;
+    private final UserRepository userRepository;
     private final VendorMapper vendorMapper;
     private final UserServiceClient userServiceClient;
 
@@ -48,6 +52,27 @@ public class VendorService {
         VendorProfile vendor = vendorRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor profile not found for this user"));
         return vendorMapper.toResponse(vendor);
+    }
+
+    @Transactional
+    public VendorResponse registerProfessional(UUID userId, VendorRegisterRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        VendorProfile vendor = vendorRepository.findByUserId(userId)
+                .map(v -> {
+                    vendorMapper.updateEntity(request, v);
+                    return v;
+                })
+                .orElseGet(() -> {
+                    VendorProfile v = vendorMapper.toEntity(request);
+                    v.setUser(user);
+                    return v;
+                });
+
+        VendorProfile saved = vendorRepository.save(vendor);
+        log.info("Professional profile registered/updated for user: {}", userId);
+        return vendorMapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)

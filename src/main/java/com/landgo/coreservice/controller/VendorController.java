@@ -1,10 +1,12 @@
 package com.landgo.coreservice.controller;
 
+import com.landgo.coreservice.dto.request.VendorRegisterRequest;
 import com.landgo.coreservice.dto.response.ApiResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.dto.response.VendorResponse;
 import com.landgo.coreservice.security.CurrentUser;
 import com.landgo.coreservice.service.VendorService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -46,9 +48,11 @@ public class VendorController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<VendorResponse>> registerProfessional(@CurrentUser UUID userId) {
-        VendorResponse vendor = vendorService.getMyVendorProfile(userId);
-        return ResponseEntity.ok(ApiResponse.success("Professional profile ready", vendor));
+    public ResponseEntity<ApiResponse<VendorResponse>> registerProfessional(
+            @CurrentUser UUID userId,
+            @Valid @RequestBody VendorRegisterRequest request) {
+        VendorResponse vendor = vendorService.registerProfessional(userId, request);
+        return ResponseEntity.ok(ApiResponse.success("Professional profile updated successfully", vendor));
     }
 
     @PostMapping("/subscribe")

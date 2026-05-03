@@ -117,7 +117,7 @@ public class LandController {
             @CurrentUser UUID userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getActiveListings(page, size); // Placeholder logic
+        PageResponse<LandResponse> lands = landService.getFavoriteListings(userId, page, size);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
@@ -150,7 +150,8 @@ public class LandController {
     public ResponseEntity<ApiResponse<Map<String, Boolean>>> toggleFavorite(
             @CurrentUser UUID userId,
             @PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(Map.of("favorited", true)));
+        boolean favorited = landService.toggleFavorite(userId, id);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("favorited", favorited)));
     }
 
     @PostMapping("/{id}/view")
