@@ -101,6 +101,24 @@
           }
         ]
       }
+    },
+    {
+      "changeSet": {
+        "id": "5-align-with-latest-entities",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO core; ALTER TABLE vendor_profiles ADD COLUMN IF NOT EXISTS license_number VARCHAR(50), ADD COLUMN IF NOT EXISTS years_of_experience INTEGER, ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20), ADD COLUMN IF NOT EXISTS bio TEXT, ADD COLUMN IF NOT EXISTS verification_notes VARCHAR(500); ALTER TABLE reviews ADD COLUMN IF NOT EXISTS verified_purchase BOOLEAN NOT NULL DEFAULT FALSE;"
+            }
+          },
+          {
+            "sql": {
+              "sql": "SET search_path TO core; CREATE TABLE IF NOT EXISTS vendor_specializations (vendor_id UUID NOT NULL REFERENCES vendor_profiles(id) ON DELETE CASCADE, specialization VARCHAR(255)); CREATE TABLE IF NOT EXISTS vendor_service_areas (vendor_id UUID NOT NULL REFERENCES vendor_profiles(id) ON DELETE CASCADE, service_area VARCHAR(255)); CREATE TABLE IF NOT EXISTS vendor_certifications (vendor_id UUID NOT NULL REFERENCES vendor_profiles(id) ON DELETE CASCADE, certification VARCHAR(255)); CREATE TABLE IF NOT EXISTS review_tags (review_id UUID NOT NULL REFERENCES reviews(id) ON DELETE CASCADE, tag VARCHAR(255)); CREATE TABLE IF NOT EXISTS review_photos (review_id UUID NOT NULL REFERENCES reviews(id) ON DELETE CASCADE, photo_url VARCHAR(2000));"
+            }
+          }
+        ]
+      }
     }
   ]
 }
