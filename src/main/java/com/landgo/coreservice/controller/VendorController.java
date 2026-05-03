@@ -110,7 +110,7 @@ public class VendorController {
         return ResponseEntity.ok(ApiResponse.success(Map.of("inquiryId", UUID.randomUUID().toString())));
     }
 
-    @GetMapping("/expertise-options")
+    @GetMapping({"/expertise-options", "/expertise"})
     public ResponseEntity<ApiResponse<java.util.List<String>>> getExpertiseOptions() {
         return ResponseEntity.ok(ApiResponse.success(java.util.List.of("Land Surveying", "Architecture", "Legal Advice")));
     }

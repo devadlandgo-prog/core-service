@@ -17,8 +17,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(a -> a
                 .requestMatchers("/actuator/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/internal/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/listings/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/professionals/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/listings/**", "/professionals/**", "/locations/**", "/filter-options").permitAll()
+                .requestMatchers(HttpMethod.POST, "/listings/{id}/view", "/listings/{id}/enquiry").permitAll()
                 .anyRequest().authenticated())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
