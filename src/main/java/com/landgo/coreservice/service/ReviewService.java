@@ -71,8 +71,8 @@ public class ReviewService {
         Page<Review> reviews = reviewRepository.findByProfessionalId(professionalId, pageable);
         List<ReviewResponse> content = reviews.getContent().stream().map(this::toResponse).collect(Collectors.toList());
         return PageResponse.<ReviewResponse>builder()
-                .content(content).pageNumber(reviews.getNumber()).pageSize(reviews.getSize())
-                .totalElements(reviews.getTotalElements()).totalPages(reviews.getTotalPages())
+                .data(content).page(reviews.getNumber()).pageSize(reviews.getSize())
+                .total(reviews.getTotalElements()).totalPages(reviews.getTotalPages())
                 .first(reviews.isFirst()).last(reviews.isLast()).build();
     }
 

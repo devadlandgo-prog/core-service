@@ -2,6 +2,7 @@ package com.landgo.coreservice.controller;
 
 import com.landgo.coreservice.dto.request.LandCreateRequest;
 import com.landgo.coreservice.dto.response.ApiResponse;
+import com.landgo.coreservice.dto.response.DraftResponse;
 import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.enums.LandStatus;
@@ -26,6 +27,7 @@ public class LandController {
 
     private final LandService landService;
     private final com.landgo.coreservice.service.EnquiryService enquiryService;
+    private final com.landgo.coreservice.service.ListingDraftService listingDraftService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<LandResponse>> createLand(
@@ -175,10 +177,11 @@ public class LandController {
     }
 
     @PostMapping("/submit")
-    public ResponseEntity<ApiResponse<LandResponse>> submitDraft(
+    public ResponseEntity<ApiResponse<DraftResponse>> submitDraft(
             @CurrentUser UUID userId,
             @RequestParam UUID draftId) {
-        return ResponseEntity.ok(ApiResponse.success("Draft submitted successfully", null));
+        DraftResponse draft = listingDraftService.markAsPublished(userId, draftId);
+        return ResponseEntity.ok(ApiResponse.success("Draft submitted successfully", draft));
     }
 
     @GetMapping("/recent")

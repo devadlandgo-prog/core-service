@@ -90,8 +90,8 @@ public class ListingDraftService {
         Page<ListingDraft> drafts = draftRepository.findActiveByOwnerId(userId, pageable);
         List<DraftResponse> content = drafts.getContent().stream().map(this::toResponse).collect(Collectors.toList());
         return PageResponse.<DraftResponse>builder()
-                .content(content).pageNumber(drafts.getNumber()).pageSize(drafts.getSize())
-                .totalElements(drafts.getTotalElements()).totalPages(drafts.getTotalPages())
+                .data(content).page(drafts.getNumber()).pageSize(drafts.getSize())
+                .total(drafts.getTotalElements()).totalPages(drafts.getTotalPages())
                 .first(drafts.isFirst()).last(drafts.isLast()).build();
     }
 
