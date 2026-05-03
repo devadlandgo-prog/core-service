@@ -181,8 +181,8 @@ public class LandService {
                 .collect(Collectors.toList());
 
         return PageResponse.<LandResponse>builder()
-                .content(content).pageNumber(favorites.getNumber()).pageSize(favorites.getSize())
-                .totalElements(favorites.getTotalElements()).totalPages(favorites.getTotalPages())
+                .data(content).page(favorites.getNumber()).pageSize(favorites.getSize())
+                .total(favorites.getTotalElements()).totalPages(favorites.getTotalPages())
                 .first(favorites.isFirst()).last(favorites.isLast()).build();
     }
 
@@ -220,8 +220,8 @@ public class LandService {
     private PageResponse<LandResponse> buildPageResponse(Page<Land> page) {
         List<LandResponse> content = page.getContent().stream().map(landMapper::toResponse).collect(Collectors.toList());
         return PageResponse.<LandResponse>builder()
-                .content(content).pageNumber(page.getNumber()).pageSize(page.getSize())
-                .totalElements(page.getTotalElements()).totalPages(page.getTotalPages())
+                .data(content).page(page.getNumber()).pageSize(page.getSize())
+                .total(page.getTotalElements()).totalPages(page.getTotalPages())
                 .first(page.isFirst()).last(page.isLast()).build();
     }
 }
