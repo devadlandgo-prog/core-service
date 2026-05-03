@@ -38,6 +38,7 @@ public class LandService {
     private final LandRepository landRepository;
     private final FavoriteListingRepository favoriteRepository;
     private final UserRepository userRepository;
+    private final com.landgo.coreservice.repository.VendorRepository vendorRepository;
     private final UserServiceClient userServiceClient;
     private final LandMapper landMapper;
 
@@ -183,6 +184,15 @@ public class LandService {
                 .content(content).pageNumber(favorites.getNumber()).pageSize(favorites.getSize())
                 .totalElements(favorites.getTotalElements()).totalPages(favorites.getTotalPages())
                 .first(favorites.isFirst()).last(favorites.isLast()).build();
+    }
+
+    @Transactional
+    public void updateProfessionalVerificationStatus(UUID id, com.landgo.coreservice.enums.VerificationStatus status) {
+        com.landgo.coreservice.entity.VendorProfile vendor = vendorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "id", id));
+        vendor.setVerificationStatus(status);
+        vendor.setVerified(status == com.landgo.coreservice.enums.VerificationStatus.APPROVED);
+        vendorRepository.save(vendor);
     }
 
     @Transactional

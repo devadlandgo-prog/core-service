@@ -1,5 +1,6 @@
 package com.landgo.coreservice.entity;
 
+import com.landgo.coreservice.enums.VerificationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -20,6 +21,10 @@ public class VendorProfile extends BaseEntity {
     @Column(name = "business_country", nullable = false, length = 100) private String businessCountry;
     @Column(name = "website") private String website;
     @Column(name = "verified") @Builder.Default private boolean verified = false;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status", length = 20, nullable = false)
+    @Builder.Default
+    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
     @Column(name = "rating", precision = 3, scale = 2) private BigDecimal rating;
     @Column(name = "total_reviews") @Builder.Default private Integer totalReviews = 0;
     @Column(name = "total_lands_listed") @Builder.Default private Integer totalLandsListed = 0;

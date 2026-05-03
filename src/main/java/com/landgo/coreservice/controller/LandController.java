@@ -25,6 +25,7 @@ import java.util.UUID;
 public class LandController {
 
     private final LandService landService;
+    private final com.landgo.coreservice.service.EnquiryService enquiryService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<LandResponse>> createLand(
@@ -164,6 +165,12 @@ public class LandController {
     public ResponseEntity<ApiResponse<Void>> sendEnquiry(
             @PathVariable UUID id,
             @RequestBody Map<String, String> enquiry) {
+        enquiryService.createEnquiry(
+            id, 
+            enquiry.get("name"), 
+            enquiry.get("email"), 
+            enquiry.get("message")
+        );
         return ResponseEntity.ok(ApiResponse.success("Enquiry sent successfully", null));
     }
 

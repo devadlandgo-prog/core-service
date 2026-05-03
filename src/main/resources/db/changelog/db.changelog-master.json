@@ -88,6 +88,19 @@
           }
         ]
       }
+    },
+    {
+      "changeSet": {
+        "id": "4-add-inquiry-status-and-verification-status",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO core; ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'PENDING'; ALTER TABLE vendor_profiles ADD COLUMN IF NOT EXISTS verification_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'; UPDATE vendor_profiles SET verification_status = 'APPROVED' WHERE verified = TRUE; UPDATE vendor_profiles SET verification_status = 'PENDING' WHERE verified = FALSE;"
+            }
+          }
+        ]
+      }
     }
   ]
 }
