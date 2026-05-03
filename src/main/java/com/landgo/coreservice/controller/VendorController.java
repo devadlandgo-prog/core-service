@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,43 +45,6 @@ public class VendorController {
         return ResponseEntity.ok(ApiResponse.success(vendors));
     }
 
-    @GetMapping("/subscription-plans")
-    public ResponseEntity<ApiResponse<java.util.List<Map<String, Object>>>> getSubscriptionPlans() {
-        java.util.List<Map<String, Object>> plans = java.util.List.of(
-                Map.of(
-                        "id", "basic",
-                        "name", "Basic",
-                        "description", "Starter plan for professionals",
-                        "monthlyPrice", java.math.BigDecimal.valueOf(19.99),
-                        "annualPrice", java.math.BigDecimal.valueOf(199.99),
-                        "currency", "USD",
-                        "features", java.util.List.of("Standard listing exposure"),
-                        "isPopular", false
-                ),
-                Map.of(
-                        "id", "professional",
-                        "name", "Professional",
-                        "description", "Growth plan for active professionals",
-                        "monthlyPrice", java.math.BigDecimal.valueOf(49.99),
-                        "annualPrice", java.math.BigDecimal.valueOf(499.99),
-                        "currency", "USD",
-                        "features", java.util.List.of("Priority placement", "Lead insights"),
-                        "isPopular", true
-                ),
-                Map.of(
-                        "id", "enterprise",
-                        "name", "Enterprise",
-                        "description", "Advanced plan for teams",
-                        "monthlyPrice", java.math.BigDecimal.valueOf(99.99),
-                        "annualPrice", java.math.BigDecimal.valueOf(999.99),
-                        "currency", "USD",
-                        "features", java.util.List.of("Dedicated support", "Advanced analytics"),
-                        "isPopular", false
-                )
-        );
-        return ResponseEntity.ok(ApiResponse.success(plans));
-    }
-
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<VendorResponse>> registerProfessional(@CurrentUser UUID userId) {
         VendorResponse vendor = vendorService.getMyVendorProfile(userId);
@@ -100,7 +64,7 @@ public class VendorController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboard(@CurrentUser UUID userId) {
         Map<String, Object> dashboard = Map.of(
                 "stats", Map.of("inquiries", 12, "profileViews", 450, "totalProjects", 8),
-                "recentInquiries", java.util.List.of()
+                "recentInquiries", List.of()
         );
         return ResponseEntity.ok(ApiResponse.success(dashboard));
     }
@@ -110,15 +74,47 @@ public class VendorController {
         return ResponseEntity.ok(ApiResponse.success(Map.of("inquiryId", UUID.randomUUID().toString())));
     }
 
+    // ── Expertise options (managed list) ────────────────────────────────────
+
     @GetMapping({"/expertise-options", "/expertise"})
-    public ResponseEntity<ApiResponse<java.util.List<String>>> getExpertiseOptions() {
-        return ResponseEntity.ok(ApiResponse.success(java.util.List.of("Land Surveying", "Architecture", "Legal Advice")));
+    public ResponseEntity<ApiResponse<List<String>>> getExpertiseOptions() {
+        return ResponseEntity.ok(ApiResponse.success(
+                List.of("Land Surveying", "Architecture", "Legal Advice", "Civil Engineering",
+                        "Environmental Assessment", "Urban Planning", "Real Estate Law", "Property Appraisal")));
+    }
+
+    @PostMapping("/expertise-options")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> createExpertiseOption(
+            @RequestBody Map<String, String> request) {
+        String name = request.getOrDefault("name", "");
+        if (name.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Name is required"));
+        }
+        return ResponseEntity.ok(ApiResponse.success("Expertise option created",
+                Map.of("id", UUID.randomUUID().toString(), "name", name)));
+    }
+
+    @PutMapping("/expertise-options/{id}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateExpertiseOption(
+            @PathVariable String id,
+            @RequestBody Map<String, String> request) {
+        String name = request.getOrDefault("name", "");
+        if (name.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Name is required"));
+        }
+        return ResponseEntity.ok(ApiResponse.success("Expertise option updated",
+                Map.of("id", id, "name", name)));
+    }
+
+    @DeleteMapping("/expertise-options/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteExpertiseOption(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.success("Expertise option deleted", null));
     }
 
     @PatchMapping("/me/expertise")
-    public ResponseEntity<ApiResponse<java.util.List<String>>> updateExpertise(
+    public ResponseEntity<ApiResponse<List<String>>> updateExpertise(
             @CurrentUser UUID userId,
-            @RequestBody java.util.List<String> expertise) {
+            @RequestBody List<String> expertise) {
         return ResponseEntity.ok(ApiResponse.success("Expertise updated", expertise));
     }
 }
