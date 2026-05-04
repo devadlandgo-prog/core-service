@@ -14,8 +14,15 @@ public class LandMapper {
 
     public LandResponse toResponse(Land land) {
         if (land == null) return null;
+        String title = null;
+        if (land.getProjectSpecification() != null) {
+            Object rawTitle = land.getProjectSpecification().get("title");
+            if (rawTitle != null) {
+                title = rawTitle.toString();
+            }
+        }
         LandResponse.LandResponseBuilder builder = LandResponse.builder()
-                .id(land.getId()).projectStage(land.getProjectStage()).status(land.getStatus())
+                .id(land.getId()).title(title).projectStage(land.getProjectStage()).status(land.getStatus())
                 .address(land.getAddress()).city(land.getCity()).postalCode(land.getPostalCode())
                 .lotSize(land.getLotSize()).lotUnit(land.getLotUnit()).frontage(land.getFrontage())
                 .depth(land.getDepth()).currentZoningCodes(land.getCurrentZoningCodes())

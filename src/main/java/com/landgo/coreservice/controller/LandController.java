@@ -7,6 +7,7 @@ import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.enums.LandStatus;
 import com.landgo.coreservice.enums.ProjectStage;
+import com.landgo.coreservice.exception.BadRequestException;
 import com.landgo.coreservice.security.CurrentUser;
 import com.landgo.coreservice.service.LandService;
 import jakarta.validation.Valid;
@@ -169,6 +170,9 @@ public class LandController {
     public ResponseEntity<ApiResponse<Void>> sendEnquiry(
             @PathVariable UUID id,
             @Valid @RequestBody com.landgo.coreservice.dto.request.EnquiryRequest request) {
+        if (!id.equals(request.getListingId())) {
+            throw new BadRequestException("Path listing id and request listingId must match");
+        }
         enquiryService.createEnquiry(
             id, 
             request.getName(), 

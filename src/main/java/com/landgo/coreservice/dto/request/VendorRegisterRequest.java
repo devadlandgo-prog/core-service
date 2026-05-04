@@ -1,4 +1,5 @@
 package com.landgo.coreservice.dto.request;
+import com.landgo.coreservice.enums.SpecializationType;
 import jakarta.validation.constraints.*;
 import lombok.*;
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
@@ -7,7 +8,7 @@ public class VendorRegisterRequest {
     private String companyDescription;
     private String companyLogo;
     @NotBlank @Size(max = 50) private String licenseNumber;
-    private java.util.List<String> specialization;
+    private java.util.List<SpecializationType> specialization;
     @Min(0) private Integer yearsOfExperience;
     @NotBlank private String phoneNumber;
     private java.util.List<String> serviceArea;

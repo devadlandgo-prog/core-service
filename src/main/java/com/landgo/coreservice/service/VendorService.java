@@ -1,6 +1,7 @@
 package com.landgo.coreservice.service;
 
 import com.landgo.coreservice.dto.request.VendorRegisterRequest;
+import com.landgo.coreservice.dto.request.ProfessionalSubscriptionRequest;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.dto.response.VendorResponse;
 import com.landgo.coreservice.entity.ProfessionalEnquiry;
@@ -111,8 +112,8 @@ public class VendorService {
     }
 
     @Transactional
-    public Map<String, String> createProfessionalSubscriptionIntent(UUID userId) {
-        return userServiceClient.createProfessionalSubscriptionIntent(userId);
+    public Map<String, String> createProfessionalSubscriptionIntent(UUID userId, ProfessionalSubscriptionRequest request) {
+        return userServiceClient.createProfessionalSubscriptionIntent(userId, request);
     }
 
     @Transactional(readOnly = true)
@@ -147,7 +148,8 @@ public class VendorService {
         vendor.setCompanyDescription(request.getCompanyDescription());
         vendor.setCompanyLogo(request.getCompanyLogo());
         vendor.setLicenseNumber(request.getLicenseNumber());
-        vendor.setSpecialization(request.getSpecialization());
+        vendor.setSpecialization(request.getSpecialization() == null ? null :
+                request.getSpecialization().stream().map(Enum::name).toList());
         vendor.setYearsOfExperience(request.getYearsOfExperience());
         vendor.setPhoneNumber(request.getPhoneNumber());
         vendor.setServiceArea(request.getServiceArea());

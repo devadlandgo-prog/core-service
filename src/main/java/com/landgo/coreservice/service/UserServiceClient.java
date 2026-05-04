@@ -2,6 +2,7 @@ package com.landgo.coreservice.service;
 
 import com.landgo.coreservice.dto.response.VendorResponse;
 import com.landgo.coreservice.dto.response.UserResponse;
+import com.landgo.coreservice.dto.request.ProfessionalSubscriptionRequest;
 import com.landgo.coreservice.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,16 +53,18 @@ public class UserServiceClient {
         }
     }
 
-    public Map<String, String> createProfessionalSubscriptionIntent(UUID userId) {
+    public Map<String, String> createProfessionalSubscriptionIntent(UUID userId, ProfessionalSubscriptionRequest request) {
         try {
-            Map<String, String> request = Map.of(
-                    "plan", "PREMIUM",
-                    "billingCycle", "MONTHLY"
+            Map<String, Object> payload = Map.of(
+                    "planId", request.getPlanId(),
+                    "subscriptionType", request.getSubscriptionType(),
+                    "paymentMethodId", request.getPaymentMethodId(),
+                    "autoRenew", request.isAutoRenew()
             );
             @SuppressWarnings("unchecked")
             Map<String, String> response = restTemplate.postForObject(
                     paymentServiceUrl + "/internal/subscriptions/user/" + userId + "/intent",
-                    request,
+                    payload,
                     Map.class
             );
             if (response == null || !response.containsKey("paymentIntentId") || !response.containsKey("clientSecret")) {

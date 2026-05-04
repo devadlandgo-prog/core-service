@@ -1,6 +1,7 @@
 package com.landgo.coreservice.controller;
 
 import com.landgo.coreservice.dto.request.VendorRegisterRequest;
+import com.landgo.coreservice.dto.request.ProfessionalSubscriptionRequest;
 import com.landgo.coreservice.dto.response.ApiResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.dto.response.VendorResponse;
@@ -56,8 +57,10 @@ public class VendorController {
     }
 
     @PostMapping("/subscribe")
-    public ResponseEntity<ApiResponse<Map<String, String>>> subscribeProfessional(@CurrentUser UUID userId) {
-        Map<String, String> payload = vendorService.createProfessionalSubscriptionIntent(userId);
+    public ResponseEntity<ApiResponse<Map<String, String>>> subscribeProfessional(
+            @CurrentUser UUID userId,
+            @Valid @RequestBody ProfessionalSubscriptionRequest request) {
+        Map<String, String> payload = vendorService.createProfessionalSubscriptionIntent(userId, request);
         return ResponseEntity.ok(ApiResponse.success(payload));
     }
 

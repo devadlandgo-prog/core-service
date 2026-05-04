@@ -8,6 +8,7 @@ import java.util.*;
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class LandResponse {
     private UUID id;
+    private String title;
     private ProjectStage projectStage;
     private LandStatus status;
     private String address;
