@@ -38,6 +38,12 @@ public interface LandRepository extends JpaRepository<Land, UUID>, JpaSpecificat
     @Query("SELECT l FROM Land l WHERE l.status = 'ACTIVE' AND l.deleted = false ORDER BY l.viewCount DESC")
     List<Land> findPopularListings(Pageable pageable);
 
+    @Query("SELECT l FROM Land l WHERE l.status = 'ACTIVE' AND l.deleted = false AND l.isFeatured = true")
+    Page<Land> findFeaturedListings(Pageable pageable);
+
+    @Query("SELECT l FROM Land l WHERE l.status = 'ACTIVE' AND l.deleted = false AND l.isHotDeal = true")
+    Page<Land> findHotDeveloperDeals(Pageable pageable);
+
     @Modifying
     @Query("UPDATE Land l SET l.viewCount = l.viewCount + 1 WHERE l.id = :id")
     void incrementViewCount(@Param("id") UUID id);

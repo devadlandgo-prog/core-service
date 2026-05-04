@@ -31,6 +31,8 @@ public class LandResponse {
     private String ownershipVerification;
     private Integer viewCount;
     private Integer inquiryCount;
+    private boolean isFeatured;
+    private boolean isHotDeal;
     private UUID vendorId;
     private String vendorCompanyName;
     private boolean vendorVerified;

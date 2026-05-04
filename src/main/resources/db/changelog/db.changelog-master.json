@@ -119,6 +119,19 @@
           }
         ]
       }
+    },
+    {
+      "changeSet": {
+        "id": "6-add-featured-and-hot-deal-to-lands",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO core; ALTER TABLE lands ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT FALSE, ADD COLUMN IF NOT EXISTS is_hot_deal BOOLEAN NOT NULL DEFAULT FALSE;"
+            }
+          }
+        ]
+      }
     }
   ]
 }

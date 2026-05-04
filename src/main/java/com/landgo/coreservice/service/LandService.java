@@ -92,6 +92,28 @@ public class LandService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<LandResponse> getHotDeveloperDeals(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Land> lands = landRepository.findHotDeveloperDeals(pageable);
+        return buildPageResponse(lands);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<LandResponse> getFeaturedListings(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Land> lands = landRepository.findFeaturedListings(pageable);
+        return buildPageResponse(lands);
+    }
+
+    @Transactional
+    public Long incrementViewCount(UUID id) {
+        Land land = landRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
+        landRepository.incrementViewCount(id);
+        return land.getViewCount() + 1L;
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<LandResponse> searchLands(String search, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Land> lands = landRepository.searchLands(search, pageable);

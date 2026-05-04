@@ -27,6 +27,7 @@ public class LandMapper {
                 .photos(land.getPhotos()).documents(land.getDocuments())
                 .ownershipVerification(land.getOwnershipVerification())
                 .viewCount(land.getViewCount()).inquiryCount(land.getInquiryCount())
+                .isFeatured(land.isFeatured()).isHotDeal(land.isHotDeal())
                 .createdAt(land.getCreatedAt()).updatedAt(land.getUpdatedAt());
         
         if (land.getVendorId() != null) {

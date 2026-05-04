@@ -95,7 +95,7 @@ public class LandController {
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getHotDeveloperDeals(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getActiveListings(page, size); // Placeholder logic
+        PageResponse<LandResponse> lands = landService.getHotDeveloperDeals(page, size);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
@@ -111,7 +111,7 @@ public class LandController {
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getFeaturedListings(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getActiveListings(page, size); // Placeholder logic
+        PageResponse<LandResponse> lands = landService.getFeaturedListings(page, size);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
@@ -161,7 +161,8 @@ public class LandController {
     @PostMapping("/{id}/view")
     public ResponseEntity<ApiResponse<Map<String, Long>>> incrementView(
             @PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.success(Map.of("views", 100L)));
+        Long views = landService.incrementViewCount(id);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("views", views)));
     }
 
     @PostMapping("/{id}/enquiry")
