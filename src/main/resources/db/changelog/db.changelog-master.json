@@ -132,6 +132,55 @@
           }
         ]
       }
+    },
+    {
+      "changeSet": {
+        "id": "7-create-expertise-and-pro-enquiries",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO core; CREATE TABLE IF NOT EXISTS expertise_options (id UUID PRIMARY KEY, name VARCHAR(100) NOT NULL UNIQUE, is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL); CREATE TABLE IF NOT EXISTS professional_enquiries (id UUID PRIMARY KEY, vendor_id UUID NOT NULL, sender_id UUID, sender_name VARCHAR(255) NOT NULL, sender_email VARCHAR(255) NOT NULL, message TEXT NOT NULL, status VARCHAR(50) NOT NULL, created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL);"
+            }
+          },
+          {
+            "sql": {
+              "sql": "SET search_path TO core; INSERT INTO expertise_options (id, name, is_active, created_at, updated_at) VALUES (gen_random_uuid(), 'Land Surveying', true, now(), now()), (gen_random_uuid(), 'Architecture', true, now(), now()), (gen_random_uuid(), 'Legal Advice', true, now(), now()), (gen_random_uuid(), 'Civil Engineering', true, now(), now()), (gen_random_uuid(), 'Environmental Assessment', true, now(), now()), (gen_random_uuid(), 'Urban Planning', true, now(), now()), (gen_random_uuid(), 'Real Estate Law', true, now(), now()), (gen_random_uuid(), 'Property Appraisal', true, now(), now()) ON CONFLICT (name) DO NOTHING;"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "changeSet": {
+        "id": "8-create-locations-table",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO core; CREATE TABLE IF NOT EXISTS locations (id UUID PRIMARY KEY, name VARCHAR(255) NOT NULL, code VARCHAR(10) NOT NULL, type VARCHAR(20) NOT NULL, parent_id UUID, is_active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL);"
+            }
+          },
+          {
+            "sql": {
+              "sql": "SET search_path TO core; INSERT INTO locations (id, name, code, type, parent_id, is_active, created_at, updated_at) VALUES ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Canada', 'CA', 'COUNTRY', NULL, true, now(), now()); INSERT INTO locations (id, name, code, type, parent_id, is_active, created_at, updated_at) VALUES ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'Ontario', 'ON', 'STATE', 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', true, now(), now()); INSERT INTO locations (id, name, code, type, parent_id, is_active, created_at, updated_at) VALUES ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13', 'Toronto', 'TOR', 'CITY', 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', true, now(), now());"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "changeSet": {
+        "id": "9-align-expertise-options-active-column",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO core; ALTER TABLE expertise_options ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE; UPDATE expertise_options SET is_active = COALESCE(active, TRUE) WHERE is_active IS NULL;"
+            }
+          }
+        ]
+      }
     }
   ]
 }

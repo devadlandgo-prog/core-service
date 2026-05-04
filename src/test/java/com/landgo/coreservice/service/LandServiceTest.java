@@ -5,9 +5,9 @@ import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.entity.Land;
 import com.landgo.coreservice.mapper.LandMapper;
 import com.landgo.coreservice.repository.LandRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -29,11 +29,12 @@ public class LandServiceTest {
     @Mock
     private LandRepository landRepository;
 
-    @Mock
-    private LandMapper landMapper;
-
-    @InjectMocks
     private LandService landService;
+
+    @BeforeEach
+    void setUp() {
+        landService = new LandService(landRepository, null, null, null, null, new LandMapper());
+    }
 
     @Test
     public void testGetHotDeveloperDeals() {
@@ -42,8 +43,6 @@ public class LandServiceTest {
         Page<Land> page = new PageImpl<>(Collections.singletonList(land));
         
         when(landRepository.findHotDeveloperDeals(any(PageRequest.class))).thenReturn(page);
-        when(landMapper.toResponse(any(Land.class))).thenReturn(new LandResponse());
-
         PageResponse<LandResponse> result = landService.getHotDeveloperDeals(0, 10);
         
         assertNotNull(result);
@@ -58,8 +57,6 @@ public class LandServiceTest {
         Page<Land> page = new PageImpl<>(Collections.singletonList(land));
         
         when(landRepository.findFeaturedListings(any(PageRequest.class))).thenReturn(page);
-        when(landMapper.toResponse(any(Land.class))).thenReturn(new LandResponse());
-
         PageResponse<LandResponse> result = landService.getFeaturedListings(0, 10);
         
         assertNotNull(result);

@@ -2,6 +2,7 @@ package com.landgo.coreservice.service;
 
 import com.landgo.coreservice.dto.response.VendorResponse;
 import com.landgo.coreservice.dto.response.UserResponse;
+import com.landgo.coreservice.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,27 @@ public class UserServiceClient {
             return response != null && Boolean.TRUE.equals(response.get("active"));
         } catch (RestClientException e) {
             return false;
+        }
+    }
+
+    public Map<String, String> createProfessionalSubscriptionIntent(UUID userId) {
+        try {
+            Map<String, String> request = Map.of(
+                    "plan", "PREMIUM",
+                    "billingCycle", "MONTHLY"
+            );
+            @SuppressWarnings("unchecked")
+            Map<String, String> response = restTemplate.postForObject(
+                    paymentServiceUrl + "/internal/subscriptions/user/" + userId + "/intent",
+                    request,
+                    Map.class
+            );
+            if (response == null || !response.containsKey("paymentIntentId") || !response.containsKey("clientSecret")) {
+                throw new BadRequestException("Invalid intent response from payment service");
+            }
+            return response;
+        } catch (RestClientException e) {
+            throw new BadRequestException("Unable to create subscription intent");
         }
     }
 }

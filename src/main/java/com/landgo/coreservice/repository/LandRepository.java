@@ -49,13 +49,13 @@ public interface LandRepository extends JpaRepository<Land, UUID>, JpaSpecificat
     void incrementViewCount(@Param("id") UUID id);
 
     @Query("SELECT COUNT(l) FROM Land l WHERE l.vendorId = :vendorId AND l.status = 'ACTIVE' AND l.deleted = false")
-    int countActiveListingsByVendorId(@Param("vendorId") UUID vendorId);
-
-    @Query("SELECT COUNT(l) FROM Land l WHERE l.vendorId = :vendorId AND l.deleted = false")
-    long countAllByVendorIdAndDeletedFalse(@Param("vendorId") UUID vendorId);
+    long countActiveListingsByVendorId(@Param("vendorId") UUID vendorId);
 
     @Query("SELECT COALESCE(SUM(l.viewCount), 0) FROM Land l WHERE l.vendorId = :vendorId AND l.deleted = false")
     long sumViewCountByVendorId(@Param("vendorId") UUID vendorId);
+
+    @Query("SELECT COUNT(l) FROM Land l WHERE l.vendorId = :vendorId AND l.deleted = false")
+    long countAllByVendorIdAndDeletedFalse(@Param("vendorId") UUID vendorId);
 
     @Query("SELECT l FROM Land l WHERE l.status = 'ACTIVE' AND l.deleted = false AND (:keyword IS NULL OR (LOWER(l.address) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR LOWER(l.city) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))) AND (:city IS NULL OR LOWER(l.city) = LOWER(CAST(:city AS string))) AND (:stage IS NULL OR l.projectStage = :stage) AND (:minPrice IS NULL OR l.askingPrice >= :minPrice) AND (:maxPrice IS NULL OR l.askingPrice <= :maxPrice) AND (:minLotSize IS NULL OR l.lotSize >= :minLotSize) AND (:maxLotSize IS NULL OR l.lotSize <= :maxLotSize)")
     Page<Land> findBySavedSearchCriteria(@Param("keyword") String keyword, @Param("city") String city, @Param("stage") ProjectStage stage, @Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice, @Param("minLotSize") BigDecimal minLotSize, @Param("maxLotSize") BigDecimal maxLotSize, Pageable pageable);

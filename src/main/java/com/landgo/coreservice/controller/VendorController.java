@@ -56,35 +56,28 @@ public class VendorController {
     }
 
     @PostMapping("/subscribe")
-    public ResponseEntity<ApiResponse<Map<String, String>>> subscribeProfessional() {
-        Map<String, String> payload = Map.of(
-                "paymentIntentId", "pi_placeholder",
-                "clientSecret", "cs_placeholder"
-        );
+    public ResponseEntity<ApiResponse<Map<String, String>>> subscribeProfessional(@CurrentUser UUID userId) {
+        Map<String, String> payload = vendorService.createProfessionalSubscriptionIntent(userId);
         return ResponseEntity.ok(ApiResponse.success(payload));
     }
 
     @GetMapping("/me/dashboard")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboard(@CurrentUser UUID userId) {
-        Map<String, Object> dashboard = Map.of(
-                "stats", Map.of("inquiries", 12, "profileViews", 450, "totalProjects", 8),
-                "recentInquiries", List.of()
-        );
+        Map<String, Object> dashboard = vendorService.getVendorDashboard(userId);
         return ResponseEntity.ok(ApiResponse.success(dashboard));
     }
 
     @PostMapping("/inquiry")
     public ResponseEntity<ApiResponse<Map<String, String>>> sendInquiry(@RequestBody Map<String, String> request) {
-        return ResponseEntity.ok(ApiResponse.success(Map.of("inquiryId", UUID.randomUUID().toString())));
+        UUID inquiryId = vendorService.sendInquiry(request);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("inquiryId", inquiryId.toString())));
     }
 
     // ── Expertise options (managed list) ────────────────────────────────────
 
     @GetMapping({"/expertise-options", "/expertise"})
     public ResponseEntity<ApiResponse<List<String>>> getExpertiseOptions() {
-        return ResponseEntity.ok(ApiResponse.success(
-                List.of("Land Surveying", "Architecture", "Legal Advice", "Civil Engineering",
-                        "Environmental Assessment", "Urban Planning", "Real Estate Law", "Property Appraisal")));
+        return ResponseEntity.ok(ApiResponse.success(vendorService.getExpertiseOptions()));
     }
 
     @PostMapping("/expertise-options")
@@ -94,24 +87,27 @@ public class VendorController {
         if (name.isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Name is required"));
         }
+        com.landgo.coreservice.entity.ExpertiseOption created = vendorService.createExpertiseOption(name);
         return ResponseEntity.ok(ApiResponse.success("Expertise option created",
-                Map.of("id", UUID.randomUUID().toString(), "name", name)));
+                Map.of("id", created.getId().toString(), "name", created.getName())));
     }
 
     @PutMapping("/expertise-options/{id}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> updateExpertiseOption(
-            @PathVariable String id,
+            @PathVariable UUID id,
             @RequestBody Map<String, String> request) {
         String name = request.getOrDefault("name", "");
         if (name.isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Name is required"));
         }
+        vendorService.updateExpertiseOption(id, name);
         return ResponseEntity.ok(ApiResponse.success("Expertise option updated",
-                Map.of("id", id, "name", name)));
+                Map.of("id", id.toString(), "name", name)));
     }
 
     @DeleteMapping("/expertise-options/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteExpertiseOption(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<Void>> deleteExpertiseOption(@PathVariable UUID id) {
+        vendorService.deleteExpertiseOption(id);
         return ResponseEntity.ok(ApiResponse.success("Expertise option deleted", null));
     }
 
@@ -119,6 +115,7 @@ public class VendorController {
     public ResponseEntity<ApiResponse<List<String>>> updateExpertise(
             @CurrentUser UUID userId,
             @RequestBody List<String> expertise) {
+        vendorService.updateVendorExpertise(userId, expertise);
         return ResponseEntity.ok(ApiResponse.success("Expertise updated", expertise));
     }
 }
