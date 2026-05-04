@@ -5,6 +5,7 @@ import com.landgo.coreservice.dto.response.UserResponse;
 import com.landgo.coreservice.dto.request.ProfessionalSubscriptionRequest;
 import com.landgo.coreservice.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserServiceClient {
 
@@ -29,6 +31,7 @@ public class UserServiceClient {
         try {
             return restTemplate.getForObject(userServiceUrl + "/internal/users/" + userId, UserResponse.class);
         } catch (RestClientException e) {
+            log.warn("Failed to fetch user profile from user-service for userId={}: {}", userId, e.getMessage());
             return null;
         }
     }
@@ -37,6 +40,7 @@ public class UserServiceClient {
         try {
             return restTemplate.getForObject(userServiceUrl + "/internal/users/" + userId + "/vendor", VendorResponse.class);
         } catch (RestClientException e) {
+            log.warn("Failed to fetch vendor profile from user-service for userId={}: {}", userId, e.getMessage());
             return null;
         }
     }
@@ -49,6 +53,7 @@ public class UserServiceClient {
             );
             return response != null && Boolean.TRUE.equals(response.get("active"));
         } catch (RestClientException e) {
+            log.warn("Failed to check active subscription from payment-service for userId={}: {}", userId, e.getMessage());
             return false;
         }
     }
@@ -72,6 +77,7 @@ public class UserServiceClient {
             }
             return response;
         } catch (RestClientException e) {
+            log.error("Failed to create professional subscription intent for userId={}: {}", userId, e.getMessage());
             throw new BadRequestException("Unable to create subscription intent");
         }
     }
