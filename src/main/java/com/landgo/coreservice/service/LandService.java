@@ -44,6 +44,7 @@ public class LandService {
 
     @Transactional
     public LandResponse createLand(UUID userId, LandCreateRequest request) {
+        log.info("Creating new listing for user: {}", userId);
         VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
         if (vendor == null) {
             throw new BadRequestException("You must register as a vendor/seller first");
@@ -137,11 +138,16 @@ public class LandService {
 
     @Transactional
     public void deleteLand(UUID userId, UUID landId) {
+        log.info("Attempting to delete listing: {} by user: {}", landId, userId);
         Land land = landRepository.findByIdAndDeletedFalse(landId)
-                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", landId));
+                .orElseThrow(() -> {
+                    log.warn("Delete failed: Listing {} not found", landId);
+                    return new ResourceNotFoundException("Land", "id", landId);
+                });
 
         VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
         if (vendor == null || !land.getVendorId().equals(vendor.getId())) {
+            log.warn("Delete denied: User {} is not the owner of listing {}", userId, landId);
             throw new ForbiddenException("You are not authorized to delete this listing");
         }
 
