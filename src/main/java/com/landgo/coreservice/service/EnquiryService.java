@@ -43,4 +43,11 @@ public class EnquiryService {
         enquiry.setStatus(status);
         enquiryRepository.save(enquiry);
     }
+
+    @Transactional
+    public void deleteEnquiry(UUID id) {
+        Enquiry enquiry = enquiryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Enquiry not found"));
+        enquiryRepository.delete(enquiry);
+    }
 }

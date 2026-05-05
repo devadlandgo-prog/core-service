@@ -24,7 +24,7 @@ public class UserServiceClient {
     @Value("${app.services.user-service-url:http://localhost:8081}")
     private String userServiceUrl;
 
-    @Value("${app.services.payment-service-url:http://localhost:8083}")
+    @Value("${app.services.payment-service-url:http://localhost:8082}")
     private String paymentServiceUrl;
 
     public UserResponse getUserById(UUID userId) {

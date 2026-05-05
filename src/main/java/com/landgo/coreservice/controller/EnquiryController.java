@@ -35,4 +35,10 @@ public class EnquiryController {
         enquiryService.updateStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success("Enquiry status updated", null));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEnquiry(@PathVariable UUID id) {
+        enquiryService.deleteEnquiry(id);
+        return ResponseEntity.noContent().build();
+    }
 }
