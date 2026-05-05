@@ -44,9 +44,10 @@ public class LandService {
 
     @Transactional
     public LandResponse createLand(UUID userId, LandCreateRequest request) {
-        log.info("Creating new listing for user: {}", userId);
+        log.info("Transaction BEGIN: Creating land listing for user: {}", userId);
         VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
         if (vendor == null) {
+            log.warn("Transaction ROLLBACK: User {} is not a vendor", userId);
             throw new BadRequestException("You must register as a vendor/seller first");
         }
 
@@ -56,7 +57,7 @@ public class LandService {
 
         Land saved = landRepository.save(land);
 
-        log.info("Land listing created: {} by vendor: {}", saved.getId(), vendor.getId());
+        log.info("Transaction COMMIT: Land listing {} created by vendor: {}", saved.getId(), vendor.getId());
         return landMapper.toResponse(saved);
     }
 
@@ -145,16 +146,19 @@ public class LandService {
 
     @Transactional
     public LandResponse updateLand(UUID userId, UUID landId, LandCreateRequest request) {
+        log.info("Transaction BEGIN: Updating land listing {}", landId);
         Land land = landRepository.findByIdAndDeletedFalse(landId)
                 .orElseThrow(() -> new ResourceNotFoundException("Land", "id", landId));
 
         VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
         if (vendor == null || !land.getVendorId().equals(vendor.getId())) {
+            log.warn("Transaction ROLLBACK: Unauthorized update attempt for listing {} by user {}", landId, userId);
             throw new ForbiddenException("You are not authorized to update this listing");
         }
 
         landMapper.updateEntity(request, land);
         Land updated = landRepository.save(land);
+        log.info("Transaction COMMIT: Land listing {} updated", landId);
         return landMapper.toResponse(updated);
     }
 

@@ -4,12 +4,14 @@ import com.landgo.coreservice.entity.Enquiry;
 import com.landgo.coreservice.enums.EnquiryStatus;
 import com.landgo.coreservice.repository.EnquiryRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EnquiryService {
@@ -18,6 +20,7 @@ public class EnquiryService {
 
     @Transactional
     public void createEnquiry(UUID listingId, String name, String email, String message) {
+        log.info("Transaction BEGIN: Creating enquiry for listing {}", listingId);
         Enquiry enquiry = Enquiry.builder()
                 .listingId(listingId)
                 .senderName(name)
@@ -26,6 +29,7 @@ public class EnquiryService {
                 .status(EnquiryStatus.PENDING)
                 .build();
         enquiryRepository.save(enquiry);
+        log.info("Transaction COMMIT: Enquiry saved for listing {}", listingId);
     }
 
     public List<Enquiry> getAllEnquiries() {
@@ -46,8 +50,10 @@ public class EnquiryService {
 
     @Transactional
     public void deleteEnquiry(UUID id) {
+        log.info("Transaction BEGIN: Deleting enquiry {}", id);
         Enquiry enquiry = enquiryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Enquiry not found"));
         enquiryRepository.delete(enquiry);
+        log.info("Transaction COMMIT: Enquiry {} deleted", id);
     }
 }
