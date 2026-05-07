@@ -47,7 +47,7 @@ public class ReviewService {
         VendorProfile professional = vendorRepository.findByIdWithUser(professionalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Professional", "id", professionalId));
 
-        if (professional.getUser().getId().equals(authorId)) {
+        if (professional.getUserId().equals(authorId)) {
             throw new BadRequestException("You cannot review yourself");
         }
 
