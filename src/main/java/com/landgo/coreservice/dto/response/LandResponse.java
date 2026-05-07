@@ -8,6 +8,7 @@ import java.util.*;
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class LandResponse {
     private UUID id;
+    private String title;
     private ProjectStage projectStage;
     private LandStatus status;
     private String address;
@@ -31,6 +32,8 @@ public class LandResponse {
     private String ownershipVerification;
     private Integer viewCount;
     private Integer inquiryCount;
+    private boolean isFeatured;
+    private boolean isHotDeal;
     private UUID vendorId;
     private String vendorCompanyName;
     private boolean vendorVerified;

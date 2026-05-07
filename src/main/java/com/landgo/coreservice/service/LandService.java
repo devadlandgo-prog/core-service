@@ -3,21 +3,23 @@ package com.landgo.coreservice.service;
 import com.landgo.coreservice.dto.request.LandCreateRequest;
 import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
-import com.landgo.coreservice.dto.response.VendorResponse;
+import com.landgo.coreservice.entity.FavoriteListing;
 import com.landgo.coreservice.entity.Land;
 import com.landgo.coreservice.enums.LandStatus;
 import com.landgo.coreservice.enums.ProjectStage;
-import com.landgo.coreservice.exception.BadRequestException;
 import com.landgo.coreservice.exception.ForbiddenException;
 import com.landgo.coreservice.exception.ResourceNotFoundException;
 import com.landgo.coreservice.mapper.LandMapper;
+import com.landgo.coreservice.repository.FavoriteListingRepository;
 import com.landgo.coreservice.repository.LandRepository;
+import com.landgo.coreservice.repository.LandSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,130 +34,186 @@ import java.util.stream.Collectors;
 public class LandService {
 
     private final LandRepository landRepository;
+    private final FavoriteListingRepository favoriteRepository;
     private final UserServiceClient userServiceClient;
     private final LandMapper landMapper;
 
     @Transactional
-    public LandResponse createLand(UUID userId, LandCreateRequest request) {
-        VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
-        if (vendor == null) {
-            throw new BadRequestException("You must register as a vendor/seller first");
-        }
-
+    public LandResponse createLand(LandCreateRequest request, UUID vendorId) {
+        log.debug("Creating land for vendorId: {}", vendorId);
         Land land = landMapper.toEntity(request);
-        land.setVendorId(vendor.getId());
+        land.setVendorId(vendorId);
         land.setStatus(LandStatus.PENDING_APPROVAL);
-
+        land.setFeatured(false);
+        land.setViewCount(0);
+        land.setInquiryCount(0);
         Land saved = landRepository.save(land);
-
-        log.info("Land listing created: {} by vendor: {}", saved.getId(), vendor.getId());
-        return landMapper.toResponse(saved);
+        log.debug("Land created with id: {}", saved.getId());
+        return getLandResponseWithFavorite(saved, vendorId);
     }
 
     @Transactional(readOnly = true)
-    public LandResponse getLandById(UUID id) {
+    public LandResponse getLandById(UUID id, UUID currentUserId) {
         Land land = landRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
-        return landMapper.toResponse(land);
-    }
-
-    @Transactional
-    public LandResponse getLandByIdWithView(UUID id) {
-        Land land = landRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
-        landRepository.incrementViewCount(id);
-        land.setViewCount(land.getViewCount() + 1);
-        return landMapper.toResponse(land);
+        return getLandResponseWithFavorite(land, currentUserId);
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<LandResponse> getActiveListings(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    public PageResponse<LandResponse> getActiveLands(int page, int size, String sortBy, String sortDir) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDir), sortBy));
         Page<Land> lands = landRepository.findByStatusAndDeletedFalse(LandStatus.ACTIVE, pageable);
-        return buildPageResponse(lands);
+        return getPageResponse(lands);
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<LandResponse> searchLands(String search, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Land> lands = landRepository.searchLands(search, pageable);
-        return buildPageResponse(lands);
+    public PageResponse<LandResponse> searchLands(String query, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Specification<Land> spec = LandSpecification.searchLands(query)
+                .and(LandSpecification.hasStatus("ACTIVE"))
+                .and(LandSpecification.isNotDeleted());
+        Page<Land> lands = landRepository.findAll(spec, pageable);
+        return getPageResponse(lands);
     }
 
     @Transactional(readOnly = true)
     public PageResponse<LandResponse> filterLands(String city, ProjectStage stage, BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size);
         Page<Land> lands = landRepository.findByFilters(city, stage, minPrice, maxPrice, pageable);
-        return buildPageResponse(lands);
+        return getPageResponse(lands);
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<LandResponse> getVendorLands(UUID vendorId, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    public PageResponse<LandResponse> getMyLands(UUID vendorId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
         Page<Land> lands = landRepository.findByVendorId(vendorId, pageable);
-        return buildPageResponse(lands);
+        return getPageResponse(lands);
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<LandResponse> getMyListings(UUID userId, int page, int size) {
-        VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
-        if (vendor == null) {
-            throw new ResourceNotFoundException("Vendor profile not found");
-        }
-        return getVendorLands(vendor.getId(), page, size);
+    public List<LandResponse> getRecentLands(int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
+        List<Land> lands = landRepository.findRecentListings(pageable);
+        return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<LandResponse> getPopularLands(int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "viewCount"));
+        List<Land> lands = landRepository.findPopularListings(pageable);
+        return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<LandResponse> getFeaturedLands(int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
+        List<Land> lands = landRepository.findFeaturedListings(pageable).getContent();
+        return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<LandResponse> getHotDeveloperDeals(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Land> lands = landRepository.findHotDeveloperDeals(pageable).getContent();
+        return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
     }
 
     @Transactional
-    public LandResponse updateLand(UUID userId, UUID landId, LandCreateRequest request) {
-        Land land = landRepository.findByIdAndDeletedFalse(landId)
-                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", landId));
+    public LandResponse updateLandStatus(UUID id, LandStatus status) {
+        Land land = landRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
+        land.setStatus(status);
+        Land saved = landRepository.save(land);
+        return getLandResponseWithFavorite(saved, null);
+    }
 
+    @Transactional
+    public LandResponse updateLand(UUID id, LandCreateRequest request, UUID userId) {
+        Land land = landRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
         if (!land.getVendorId().equals(userId)) {
-             // Basic check: In microservices, complex auth often happens at Gateway or via shared JWT claims
-             // For now, aligning with previous logic where userId was compared.
+            throw new ForbiddenException("You are not authorized to update this listing");
         }
-
         landMapper.updateEntity(request, land);
-        Land updated = landRepository.save(land);
-        return landMapper.toResponse(updated);
+        Land saved = landRepository.save(land);
+        return getLandResponseWithFavorite(saved, userId);
     }
 
     @Transactional
-    public void deleteLand(UUID userId, UUID landId) {
-        Land land = landRepository.findByIdAndDeletedFalse(landId)
-                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", landId));
-
+    public void deleteLand(UUID id, UUID userId) {
+        Land land = landRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
+        if (!land.getVendorId().equals(userId)) {
+            throw new ForbiddenException("You are not authorized to delete this listing");
+        }
         land.setDeleted(true);
         landRepository.save(land);
-        log.info("Land listing deleted: {} by user: {}", landId, userId);
+        log.info("Land {} deleted by user {}", id, userId);
     }
 
     @Transactional
-    public LandResponse updateLandStatus(UUID landId, LandStatus status) {
+    public boolean toggleFavorite(UUID userId, UUID landId) {
         Land land = landRepository.findByIdAndDeletedFalse(landId)
                 .orElseThrow(() -> new ResourceNotFoundException("Land", "id", landId));
-        land.setStatus(status);
-        Land updated = landRepository.save(land);
-        return landMapper.toResponse(updated);
+        
+        return favoriteRepository.findByUserIdAndLandId(userId, landId)
+                .map(f -> {
+                    favoriteRepository.delete(f);
+                    return false;
+                })
+                .orElseGet(() -> {
+                    favoriteRepository.save(FavoriteListing.builder()
+                            .userId(userId)
+                            .landId(land.getId())
+                            .build());
+                    return true;
+                });
     }
 
     @Transactional(readOnly = true)
-    public List<LandResponse> getRecentListings(int limit) {
-        return landRepository.findRecentListings(PageRequest.of(0, limit))
-                .stream().map(landMapper::toResponse).collect(Collectors.toList());
+    public List<LandResponse> getFavoriteLands(UUID userId) {
+        List<FavoriteListing> favorites = favoriteRepository.findByUserId(userId, Pageable.unpaged()).getContent();
+        return favorites.stream()
+                .map(f -> {
+                    Land land = landRepository.findByIdAndDeletedFalse(f.getLandId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Land", "id", f.getLandId()));
+                    return getLandResponseWithFavorite(land, userId);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void incrementViewCount(UUID id) {
+        landRepository.incrementViewCount(id);
     }
 
     @Transactional(readOnly = true)
-    public List<LandResponse> getPopularListings(int limit) {
-        return landRepository.findPopularListings(PageRequest.of(0, limit))
-                .stream().map(landMapper::toResponse).collect(Collectors.toList());
+    public Object getVendorProfile(UUID vendorId) {
+        return userServiceClient.getVendorProfileForUser(vendorId);
     }
 
-    private PageResponse<LandResponse> buildPageResponse(Page<Land> page) {
-        List<LandResponse> content = page.getContent().stream().map(landMapper::toResponse).collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public List<LandResponse> getLandsByVendor(UUID vendorId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<Land> lands = landRepository.findByVendorId(vendorId, pageable).getContent();
+        return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
+    }
+
+    private LandResponse getLandResponseWithFavorite(Land land, UUID currentUserId) {
+        boolean isFavorited = currentUserId != null && 
+                favoriteRepository.findByUserIdAndLandId(currentUserId, land.getId()).isPresent();
+        
+        LandResponse response = landMapper.toResponse(land);
+        return response;
+    }
+
+    private PageResponse<LandResponse> getPageResponse(Page<Land> lands) {
+        List<LandResponse> content = lands.getContent().stream()
+                .map(land -> getLandResponseWithFavorite(land, null))
+                .collect(Collectors.toList());
         return PageResponse.<LandResponse>builder()
-                .content(content).pageNumber(page.getNumber()).pageSize(page.getSize())
-                .totalElements(page.getTotalElements()).totalPages(page.getTotalPages())
-                .first(page.isFirst()).last(page.isLast()).build();
+                .content(content).number(lands.getNumber()).size(lands.getSize())
+                .totalElements(lands.getTotalElements()).totalPages(lands.getTotalPages())
+                .first(lands.isFirst()).last(lands.isLast()).build();
     }
 }

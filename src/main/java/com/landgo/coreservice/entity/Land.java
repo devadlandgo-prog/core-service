@@ -39,4 +39,6 @@ public class Land extends BaseEntity {
     @Column(name = "ownership_verification", length = 500) private String ownershipVerification;
     @Column(name = "view_count") @Builder.Default private Integer viewCount = 0;
     @Column(name = "inquiry_count") @Builder.Default private Integer inquiryCount = 0;
+    @Column(name = "is_featured") @Builder.Default private boolean isFeatured = false;
+    @Column(name = "is_hot_deal") @Builder.Default private boolean isHotDeal = false;
 }

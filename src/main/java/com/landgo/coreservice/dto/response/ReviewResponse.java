@@ -12,5 +12,8 @@ public class ReviewResponse {
     private Integer rating;
     private String title;
     private String content;
+    private java.util.List<String> tags;
+    private java.util.List<String> photos;
+    private boolean verifiedPurchase;
     private LocalDateTime createdAt;
 }

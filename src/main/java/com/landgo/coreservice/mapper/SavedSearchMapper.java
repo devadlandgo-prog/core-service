@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 public interface SavedSearchMapper {
     SavedSearchResponse toResponse(SavedSearch savedSearch);
     @Mapping(target = "id", ignore = true) @Mapping(target = "createdAt", ignore = true) @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "deleted", ignore = true) @Mapping(target = "user", ignore = true)
+    @Mapping(target = "deleted", ignore = true) @Mapping(target = "userId", ignore = true)
     @Mapping(target = "matchCount", constant = "0") @Mapping(target = "lastNotifiedAt", ignore = true)
     SavedSearch toEntity(SavedSearchRequest request);
 }
