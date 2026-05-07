@@ -6,11 +6,12 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity @Table(name = "saved_searches")
 @Getter @Setter @SuperBuilder @NoArgsConstructor @AllArgsConstructor
 public class SavedSearch extends BaseEntity {
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id", nullable = false) private User user;
+    @Column(name = "user_id", nullable = false) private UUID userId;
     @Column(name = "name", nullable = false, length = 100) private String name;
     @Column(name = "keyword", length = 200) private String keyword;
     @Column(name = "city", length = 100) private String city;

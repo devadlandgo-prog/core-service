@@ -12,13 +12,21 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping
+@RequestMapping("/locations")
 @RequiredArgsConstructor
 public class LocationController {
 
     private final com.landgo.coreservice.repository.LocationRepository locationRepository;
 
-    @GetMapping("/locations/countries")
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<Map<String, String>>>> getAllLocations() {
+        List<Map<String, String>> locations = locationRepository.findAll().stream()
+                .map(l -> Map.of("id", l.getId().toString(), "name", l.getName(), "code", l.getCode(), "type", l.getType()))
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(locations));
+    }
+
+    @GetMapping("/countries")
     public ResponseEntity<ApiResponse<List<Map<String, String>>>> getCountries() {
         List<Map<String, String>> countries = locationRepository.findByTypeAndIsActiveTrue("COUNTRY").stream()
                 .map(l -> Map.of("code", l.getCode(), "name", l.getName()))
@@ -26,7 +34,7 @@ public class LocationController {
         return ResponseEntity.ok(ApiResponse.success(countries));
     }
 
-    @GetMapping("/locations/states")
+    @GetMapping("/states")
     public ResponseEntity<ApiResponse<List<Map<String, String>>>> getStates(@RequestParam String countryCode) {
         return locationRepository.findByCodeAndTypeAndIsActiveTrue(countryCode, "COUNTRY")
                 .map(country -> {
@@ -38,7 +46,7 @@ public class LocationController {
                 .orElse(ResponseEntity.ok(ApiResponse.success(List.of())));
     }
 
-    @GetMapping("/locations/cities")
+    @GetMapping("/cities")
     public ResponseEntity<ApiResponse<List<Map<String, String>>>> getCities(@RequestParam String stateCode) {
         return locationRepository.findByCodeAndTypeAndIsActiveTrue(stateCode, "STATE")
                 .map(state -> {
@@ -52,7 +60,6 @@ public class LocationController {
 
     @GetMapping("/filter-options")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getFilterOptions() {
-        // These could also be in DB, but for now moving to a structured constant or DB is better than inline list
         return ResponseEntity.ok(ApiResponse.success(Map.of(
                 "propertyTypes", List.of("Residential", "Commercial", "Industrial", "Mixed Use"),
                 "projectStages", List.of("Raw Land", "Zoned", "Draft Plan Approved", "Site Plan Approved"),

@@ -3,6 +3,7 @@ package com.landgo.coreservice.config;
 import com.landgo.coreservice.entity.Enquiry;
 import com.landgo.coreservice.repository.EnquiryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
@@ -14,9 +15,16 @@ import java.util.UUID;
 public class DatabaseWriteHealthIndicator implements HealthIndicator {
 
     private final EnquiryRepository enquiryRepository;
+    
+    @Value("${management.health.databaseWrite.enabled:true}")
+    private boolean enabled;
 
     @Override
     public Health health() {
+        if (!enabled) {
+            return Health.unknown().build();
+        }
+        
         try {
             Enquiry testEnquiry = Enquiry.builder()
                     .senderName("HEALTH_CHECK")

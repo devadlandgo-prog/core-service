@@ -17,13 +17,11 @@ public class FavoriteListing {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "land_id", nullable = false)
-    private Land land;
+    @Column(name = "land_id", nullable = false)
+    private UUID landId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

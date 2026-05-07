@@ -8,7 +8,7 @@ public class VendorRegisterRequest {
     private String companyDescription;
     private String companyLogo;
     @NotBlank @Size(max = 50) private String licenseNumber;
-    private java.util.List<SpecializationType> specialization;
+    private java.util.List<String> specialization;
     @Min(0) private Integer yearsOfExperience;
     @NotBlank private String phoneNumber;
     private java.util.List<String> serviceArea;

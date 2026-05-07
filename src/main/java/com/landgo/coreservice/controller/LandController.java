@@ -2,14 +2,13 @@ package com.landgo.coreservice.controller;
 
 import com.landgo.coreservice.dto.request.LandCreateRequest;
 import com.landgo.coreservice.dto.response.ApiResponse;
-import com.landgo.coreservice.dto.response.DraftResponse;
 import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
-import com.landgo.coreservice.enums.LandStatus;
 import com.landgo.coreservice.enums.ProjectStage;
-import com.landgo.coreservice.exception.BadRequestException;
 import com.landgo.coreservice.security.CurrentUser;
 import com.landgo.coreservice.service.LandService;
+import com.landgo.coreservice.dto.request.EnquiryRequest;
+import com.landgo.coreservice.service.EnquiryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,21 +26,27 @@ import java.util.UUID;
 public class LandController {
 
     private final LandService landService;
-    private final com.landgo.coreservice.service.EnquiryService enquiryService;
-    private final com.landgo.coreservice.service.ListingDraftService listingDraftService;
+    private final EnquiryService enquiryService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<LandResponse>> createLand(
             @CurrentUser UUID userId,
             @Valid @RequestBody LandCreateRequest request) {
-        LandResponse land = landService.createLand(userId, request);
+        LandResponse land = landService.createLand(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Land listing created successfully", land));
     }
 
+    @GetMapping("/favorites")
+    public ResponseEntity<ApiResponse<List<LandResponse>>> getFavoriteLands(
+            @CurrentUser UUID userId) {
+        List<LandResponse> lands = landService.getFavoriteLands(userId);
+        return ResponseEntity.ok(ApiResponse.success(lands));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<LandResponse>> getLandById(@PathVariable UUID id) {
-        LandResponse land = landService.getLandByIdWithView(id);
+        LandResponse land = landService.getLandById(id, null);
         return ResponseEntity.ok(ApiResponse.success(land));
     }
 
@@ -49,7 +54,7 @@ public class LandController {
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getActiveListings(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getActiveListings(page, size);
+        PageResponse<LandResponse> lands = landService.getActiveLands(page, size, "createdAt", "DESC");
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
@@ -74,54 +79,40 @@ public class LandController {
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
-    @GetMapping("/professional/{vendorId}")
-    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getVendorLands(
-            @PathVariable UUID vendorId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getVendorLands(vendorId, page, size);
-        return ResponseEntity.ok(ApiResponse.success(lands));
-    }
-
-    @GetMapping("/my")
-    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getMyListings(
+    @GetMapping("/mine")
+    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getMyLands(
             @CurrentUser UUID userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getMyListings(userId, page, size);
+        PageResponse<LandResponse> lands = landService.getMyLands(userId, page, size);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
-    @GetMapping("/hot-developer")
-    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getHotDeveloperDeals(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getHotDeveloperDeals(page, size);
+    @GetMapping("/recent")
+    public ResponseEntity<ApiResponse<List<LandResponse>>> getRecentLands(
+            @RequestParam(defaultValue = "10") int limit) {
+        List<LandResponse> lands = landService.getRecentLands(limit);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
-    @GetMapping("/recommendation")
-    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getRecommendations(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getRecommendations(page, size);
+    @GetMapping("/popular")
+    public ResponseEntity<ApiResponse<List<LandResponse>>> getPopularLands(
+            @RequestParam(defaultValue = "10") int limit) {
+        List<LandResponse> lands = landService.getPopularLands(limit);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
     @GetMapping("/featured")
-    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getFeaturedListings(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getFeaturedListings(page, size);
+    public ResponseEntity<ApiResponse<List<LandResponse>>> getFeaturedLands(
+            @RequestParam(defaultValue = "10") int limit) {
+        List<LandResponse> lands = landService.getFeaturedLands(limit);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
-    @GetMapping("/favorites")
-    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getFavoriteListings(
-            @CurrentUser UUID userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getFavoriteListings(userId, page, size);
+    @GetMapping("/hot-developer")
+    public ResponseEntity<ApiResponse<List<LandResponse>>> getHotDeveloperDeals(
+            @RequestParam(defaultValue = "10") int limit) {
+        List<LandResponse> lands = landService.getHotDeveloperDeals(limit);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
@@ -130,7 +121,7 @@ public class LandController {
             @CurrentUser UUID userId,
             @PathVariable UUID id,
             @Valid @RequestBody LandCreateRequest request) {
-        LandResponse land = landService.updateLand(userId, id, request);
+        LandResponse land = landService.updateLand(id, request, userId);
         return ResponseEntity.ok(ApiResponse.success("Land listing updated successfully", land));
     }
 
@@ -138,7 +129,7 @@ public class LandController {
     public ResponseEntity<ApiResponse<Void>> deleteLand(
             @CurrentUser UUID userId,
             @PathVariable UUID id) {
-        landService.deleteLand(userId, id);
+        landService.deleteLand(id, userId);
         return ResponseEntity.ok(ApiResponse.success("Land listing deleted successfully", null));
     }
 
@@ -146,7 +137,7 @@ public class LandController {
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<LandResponse>> updateLandStatus(
             @PathVariable UUID id,
-            @RequestParam LandStatus status) {
+            @RequestParam com.landgo.coreservice.enums.LandStatus status) {
         LandResponse land = landService.updateLandStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success("Land status updated", land));
     }
@@ -160,47 +151,17 @@ public class LandController {
     }
 
     @PostMapping("/{id}/view")
-    public ResponseEntity<ApiResponse<Map<String, Long>>> incrementView(
+    public ResponseEntity<ApiResponse<Map<String, String>>> incrementView(
             @PathVariable UUID id) {
-        Long views = landService.incrementViewCount(id);
-        return ResponseEntity.ok(ApiResponse.success(Map.of("views", views)));
+        landService.incrementViewCount(id);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("views", "incremented")));
     }
 
     @PostMapping("/{id}/enquiry")
     public ResponseEntity<ApiResponse<Void>> sendEnquiry(
             @PathVariable UUID id,
-            @Valid @RequestBody com.landgo.coreservice.dto.request.EnquiryRequest request) {
-        if (!id.equals(request.getListingId())) {
-            throw new BadRequestException("Path listing id and request listingId must match");
-        }
-        enquiryService.createEnquiry(
-            id, 
-            request.getName(), 
-            request.getEmail(), 
-            request.getMessage()
-        );
+            @Valid @RequestBody EnquiryRequest request) {
+        enquiryService.createEnquiry(id, request.getSenderName(), request.getSenderEmail(), request.getMessage());
         return ResponseEntity.ok(ApiResponse.success("Enquiry sent successfully", null));
-    }
-
-    @PostMapping("/submit")
-    public ResponseEntity<ApiResponse<DraftResponse>> submitDraft(
-            @CurrentUser UUID userId,
-            @RequestParam UUID draftId) {
-        DraftResponse draft = listingDraftService.markAsPublished(userId, draftId);
-        return ResponseEntity.ok(ApiResponse.success("Draft submitted successfully", draft));
-    }
-
-    @GetMapping("/recent")
-    public ResponseEntity<ApiResponse<List<LandResponse>>> getRecentListings(
-            @RequestParam(defaultValue = "10") int limit) {
-        List<LandResponse> lands = landService.getRecentListings(limit);
-        return ResponseEntity.ok(ApiResponse.success(lands));
-    }
-
-    @GetMapping("/popular")
-    public ResponseEntity<ApiResponse<List<LandResponse>>> getPopularListings(
-            @RequestParam(defaultValue = "10") int limit) {
-        List<LandResponse> lands = landService.getPopularListings(limit);
-        return ResponseEntity.ok(ApiResponse.success(lands));
     }
 }

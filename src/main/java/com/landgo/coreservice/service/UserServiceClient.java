@@ -81,4 +81,17 @@ public class UserServiceClient {
             throw new BadRequestException("Unable to create subscription intent");
         }
     }
+
+    public Object createVendorProfile(UUID userId, Map<String, Object> request) {
+        try {
+            return restTemplate.postForObject(
+                    userServiceUrl + "/internal/users/" + userId + "/vendor",
+                    request,
+                    Object.class
+            );
+        } catch (RestClientException e) {
+            log.error("Failed to create vendor profile for userId={}: {}", userId, e.getMessage());
+            throw new BadRequestException("Unable to create vendor profile");
+        }
+    }
 }

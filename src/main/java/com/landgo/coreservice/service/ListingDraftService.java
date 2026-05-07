@@ -4,12 +4,10 @@ import com.landgo.coreservice.dto.request.DraftStepRequest;
 import com.landgo.coreservice.dto.response.DraftResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.entity.ListingDraft;
-import com.landgo.coreservice.entity.User;
 import com.landgo.coreservice.enums.DraftStatus;
 import com.landgo.coreservice.exception.BadRequestException;
 import com.landgo.coreservice.exception.ResourceNotFoundException;
 import com.landgo.coreservice.repository.ListingDraftRepository;
-import com.landgo.coreservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,15 +27,11 @@ import java.util.stream.Collectors;
 public class ListingDraftService {
 
     private final ListingDraftRepository draftRepository;
-    private final UserRepository userRepository;
 
     @Transactional
     public DraftResponse createDraft(UUID userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
-
         ListingDraft draft = ListingDraft.builder()
-                .owner(user)
+                .ownerId(userId)
                 .status(DraftStatus.IN_PROGRESS)
                 .currentStep(0)
                 .build();

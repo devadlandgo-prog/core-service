@@ -22,4 +22,5 @@ public class UserResponse {
     private String phoneNumber;
     private String role;
     private Boolean emailVerified;
+    private String profileImageUrl;
 }
