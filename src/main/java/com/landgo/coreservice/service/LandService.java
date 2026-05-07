@@ -45,19 +45,21 @@ public class LandService {
     @Transactional
     public LandResponse createLand(UUID userId, LandCreateRequest request) {
         log.info("Transaction BEGIN: Creating land listing for user: {}", userId);
-        VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
-        if (vendor == null) {
-            log.warn("Transaction ROLLBACK: User {} is not a vendor", userId);
-            throw new BadRequestException("You must register as a vendor/seller first");
-        }
+        
+        // Get vendor profile from local database using userId
+        com.landgo.coreservice.entity.VendorProfile vendorProfile = vendorRepository.findByUserId(userId)
+                .orElseThrow(() -> {
+                    log.warn("Transaction ROLLBACK: User {} is not a vendor", userId);
+                    return new BadRequestException("You must register as a vendor/seller first");
+                });
 
         Land land = landMapper.toEntity(request);
-        land.setVendorId(vendor.getId());
+        land.setVendorId(vendorProfile.getId());
         land.setStatus(LandStatus.PENDING_APPROVAL);
 
         Land saved = landRepository.save(land);
 
-        log.info("Transaction COMMIT: Land listing {} created by vendor: {}", saved.getId(), vendor.getId());
+        log.info("Transaction COMMIT: Land listing {} created by vendor: {}", saved.getId(), vendorProfile.getId());
         return landMapper.toResponse(saved);
     }
 
@@ -139,7 +141,7 @@ public class LandService {
     public PageResponse<LandResponse> getMyListings(UUID userId, int page, int size) {
         VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
         if (vendor == null) {
-            throw new ResourceNotFoundException("Vendor profile not found");
+            return PageResponse.empty(page, size);
         }
         return getVendorLands(vendor.getId(), page, size);
     }
@@ -150,16 +152,25 @@ public class LandService {
         Land land = landRepository.findByIdAndDeletedFalse(landId)
                 .orElseThrow(() -> new ResourceNotFoundException("Land", "id", landId));
 
-        VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
-        if (vendor == null || !land.getVendorId().equals(vendor.getId())) {
+        // Get vendor profile from local database using userId
+        com.landgo.coreservice.entity.VendorProfile vendorProfile = vendorRepository.findByUserId(userId)
+                .orElseThrow(() -> new ForbiddenException("You are not authorized to update this listing"));
+        
+        // Check if the land belongs to this vendor (compare vendor profile IDs)
+        if (!land.getVendorId().equals(vendorProfile.getId())) {
             log.warn("Transaction ROLLBACK: Unauthorized update attempt for listing {} by user {}", landId, userId);
             throw new ForbiddenException("You are not authorized to update this listing");
         }
 
-        landMapper.updateEntity(request, land);
-        Land updated = landRepository.save(land);
-        log.info("Transaction COMMIT: Land listing {} updated", landId);
-        return landMapper.toResponse(updated);
+        try {
+            landMapper.updateEntity(request, land);
+            Land updated = landRepository.save(land);
+            log.info("Transaction COMMIT: Land listing {} updated", landId);
+            return landMapper.toResponse(updated);
+        } catch (Exception e) {
+            log.error("Error updating land listing {}: {}", landId, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Transactional
@@ -171,8 +182,12 @@ public class LandService {
                     return new ResourceNotFoundException("Land", "id", landId);
                 });
 
-        VendorResponse vendor = userServiceClient.getVendorProfileForUser(userId);
-        if (vendor == null || !land.getVendorId().equals(vendor.getId())) {
+        // Get vendor profile from local database using userId
+        com.landgo.coreservice.entity.VendorProfile vendorProfile = vendorRepository.findByUserId(userId)
+                .orElseThrow(() -> new ForbiddenException("You are not authorized to delete this listing"));
+        
+        // Check if the land belongs to this vendor (compare vendor profile IDs)
+        if (!land.getVendorId().equals(vendorProfile.getId())) {
             log.warn("Delete denied: User {} is not the owner of listing {}", userId, landId);
             throw new ForbiddenException("You are not authorized to delete this listing");
         }

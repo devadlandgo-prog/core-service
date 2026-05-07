@@ -5,21 +5,25 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
 
 @Entity @Table(name = "vendor_profiles")
 @Getter @Setter @SuperBuilder @NoArgsConstructor @AllArgsConstructor
 public class VendorProfile extends BaseEntity {
-    @OneToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id", nullable = false, unique = true) private User user;
+    @Column(name = "user_id", nullable = false, unique = true)
+    private UUID userId;
+    
     @Column(name = "company_name", nullable = false, length = 150) private String companyName;
     @Column(name = "company_description", columnDefinition = "TEXT") private String companyDescription;
     @Column(name = "company_logo", length = 2000) private String companyLogo;
     @Column(name = "license_number", length = 50) private String licenseNumber;
-    @ElementCollection @CollectionTable(name = "vendor_specializations", joinColumns = @JoinColumn(name = "vendor_id")) @Column(name = "specialization") private java.util.List<String> specialization;
+    @ElementCollection @CollectionTable(name = "vendor_specializations", joinColumns = @JoinColumn(name = "vendor_id")) @Column(name = "specialization") private List<String> specialization;
     @Column(name = "years_of_experience") private Integer yearsOfExperience;
     @Column(name = "phone_number", length = 20) private String phoneNumber;
-    @ElementCollection @CollectionTable(name = "vendor_service_areas", joinColumns = @JoinColumn(name = "vendor_id")) @Column(name = "service_area") private java.util.List<String> serviceArea;
+    @ElementCollection @CollectionTable(name = "vendor_service_areas", joinColumns = @JoinColumn(name = "vendor_id")) @Column(name = "service_area") private List<String> serviceArea;
     @Column(name = "bio", columnDefinition = "TEXT") private String bio;
-    @ElementCollection @CollectionTable(name = "vendor_certifications", joinColumns = @JoinColumn(name = "vendor_id")) @Column(name = "certification") private java.util.List<String> certifications;
+    @ElementCollection @CollectionTable(name = "vendor_certifications", joinColumns = @JoinColumn(name = "vendor_id")) @Column(name = "certification") private List<String> certifications;
     @Column(name = "business_address", nullable = false) private String businessAddress;
     @Column(name = "business_city", nullable = false, length = 100) private String businessCity;
     @Column(name = "business_state", nullable = false, length = 100) private String businessState;
@@ -36,6 +40,7 @@ public class VendorProfile extends BaseEntity {
     @Column(name = "total_reviews") @Builder.Default private Integer totalReviews = 0;
     @Column(name = "total_lands_listed") @Builder.Default private Integer totalLandsListed = 0;
     @Column(name = "total_lands_sold") @Builder.Default private Integer totalLandsSold = 0;
+    
     public void incrementLandsListed() { this.totalLandsListed++; }
     public void incrementLandsSold() { this.totalLandsSold++; }
 }

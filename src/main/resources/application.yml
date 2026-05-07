@@ -24,6 +24,7 @@ spring:
     open-in-view: false
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.json
+    drop-first: true
 
 app:
   jwt:
@@ -43,12 +44,16 @@ management:
     web:
       exposure:
         include: health,info
-management.health.mail.enabled: false
+  endpoint:
+    health:
+      show-details: always
+  health:
+    mail:
+      enabled: false
+    databaseWrite:
+      enabled: false
 
 logging:
   level:
     root: INFO
-    com.landgo: INFO
-    org.springframework.web: INFO
-    org.hibernate.SQL: INFO
-    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    com.landgo: DEBUG

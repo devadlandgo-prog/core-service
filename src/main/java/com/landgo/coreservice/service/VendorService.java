@@ -3,6 +3,7 @@ package com.landgo.coreservice.service;
 import com.landgo.coreservice.dto.request.VendorRegisterRequest;
 import com.landgo.coreservice.dto.request.ProfessionalSubscriptionRequest;
 import com.landgo.coreservice.dto.response.PageResponse;
+import com.landgo.coreservice.dto.response.UserResponse;
 import com.landgo.coreservice.dto.response.VendorResponse;
 import com.landgo.coreservice.entity.ProfessionalEnquiry;
 import com.landgo.coreservice.entity.VendorProfile;
@@ -40,7 +41,19 @@ public class VendorService {
     @Transactional(readOnly = true)
     public Map<String, Object> getVendorDashboard(UUID userId) {
         VendorProfile vendor = vendorRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vendor profile not found"));
+                .orElse(null);
+        
+        if (vendor == null) {
+            return Map.of(
+                "stats", Map.of(
+                    "inquiries", 0,
+                    "profileViews", 0,
+                    "totalProjects", 0
+                ),
+                "recentInquiries", List.of(),
+                "message", "Vendor profile not found"
+            );
+        }
 
         long activeListings = landRepository.countActiveListingsByVendorId(vendor.getId());
         long totalViews = landRepository.sumViewCountByVendorId(vendor.getId());
@@ -139,17 +152,50 @@ public class VendorService {
 
     @Transactional
     public VendorResponse registerProfessional(UUID userId, VendorRegisterRequest request) {
+        log.debug("Registering professional for userId: {}", userId);
+        // Get user from user-service to verify existence
+        UserResponse userResponse = userServiceClient.getUserById(userId);
+        log.debug("User response from user-service: {}", userResponse);
+        if (userResponse == null) {
+            throw new ResourceNotFoundException("User not found in user-service");
+        }
+        
+        // Sync user to local database if not exists
         com.landgo.coreservice.entity.User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseGet(() -> {
+                    log.debug("User not found locally, creating new user with id: {}", userId);
+                    // Use fullName or construct from firstName/lastName
+                    String fullName = userResponse.getFullName();
+                    if (fullName == null || fullName.isEmpty()) {
+                        fullName = "";
+                        if (userResponse.getFirstName() != null) {
+                            fullName += userResponse.getFirstName();
+                        }
+                        if (userResponse.getLastName() != null) {
+                            fullName += " " + userResponse.getLastName();
+                        }
+                    }
+                    com.landgo.coreservice.entity.User newUser = com.landgo.coreservice.entity.User.builder()
+                            .id(userId)
+                            .email(userResponse.getEmail())
+                            .fullName(fullName.trim())
+                            .build();
+                    com.landgo.coreservice.entity.User saved = userRepository.save(newUser);
+                    log.debug("Saved new user: {}", saved);
+                    // Flush to ensure the user is persisted before creating vendor profile
+                    userRepository.flush();
+                    return saved;
+                });
+        
         VendorProfile vendor = vendorRepository.findByUserId(userId)
-                .orElse(VendorProfile.builder().user(user).build());
+                .orElse(VendorProfile.builder().userId(userId).build());
+        log.debug("Vendor profile before update: {}", vendor);
 
         vendor.setCompanyName(request.getCompanyName());
         vendor.setCompanyDescription(request.getCompanyDescription());
         vendor.setCompanyLogo(request.getCompanyLogo());
         vendor.setLicenseNumber(request.getLicenseNumber());
-        vendor.setSpecialization(request.getSpecialization() == null ? null :
-                request.getSpecialization().stream().map(Enum::name).toList());
+        vendor.setSpecialization(request.getSpecialization());
         vendor.setYearsOfExperience(request.getYearsOfExperience());
         vendor.setPhoneNumber(request.getPhoneNumber());
         vendor.setServiceArea(request.getServiceArea());
@@ -161,9 +207,13 @@ public class VendorService {
         vendor.setBusinessZipCode(request.getBusinessZipCode());
         vendor.setBusinessCountry(request.getBusinessCountry());
         vendor.setWebsite(request.getWebsite());
+        log.debug("Vendor profile after update: {}", vendor);
 
         vendor = vendorRepository.save(vendor);
-        return vendorMapper.toResponse(vendor);
+        log.debug("Saved vendor profile: {}", vendor);
+        VendorResponse response = vendorMapper.toResponse(vendor);
+        log.debug("Mapped response: {}", response);
+        return response;
     }
 
     private PageResponse<VendorResponse> buildPageResponse(Page<VendorProfile> page) {
