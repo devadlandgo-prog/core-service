@@ -28,7 +28,7 @@ spring:
     liquibase-schema: ${LIQUIBASE_SCHEMA:core}
     database-change-log-table: ${LIQUIBASE_CHANGELOG_TABLE:databasechangelog_core}
     database-change-log-lock-table: ${LIQUIBASE_CHANGELOG_LOCK_TABLE:databasechangeloglock_core}
-    drop-first: ${LIQUIBASE_DROP_FIRST:false}
+    drop-first: true
 
 app:
   jwt:
