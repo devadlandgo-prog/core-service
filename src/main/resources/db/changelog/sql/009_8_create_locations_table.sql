@@ -1,0 +1,5 @@
+SET search_path TO core; CREATE TABLE IF NOT EXISTS locations (id UUID PRIMARY KEY, name VARCHAR(255) NOT NULL, code VARCHAR(10) NOT NULL, type VARCHAR(20) NOT NULL, parent_id UUID, is_active BOOLEAN DEFAULT TRUE);
+
+SET search_path TO core; ALTER TABLE locations ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE, ADD COLUMN IF NOT EXISTS created_at TIMESTAMP, ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP; UPDATE locations SET created_at = COALESCE(created_at, now()), updated_at = COALESCE(updated_at, now()) WHERE created_at IS NULL OR updated_at IS NULL;
+
+SET search_path TO core; INSERT INTO locations (id, name, code, type, parent_id, is_active, deleted, created_at, updated_at) VALUES ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Canada', 'CA', 'COUNTRY', NULL, true, false, now(), now()), ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'Ontario', 'ON', 'STATE', 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', true, false, now(), now()), ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13', 'Toronto', 'TOR', 'CITY', 'c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', true, false, now(), now()) ON CONFLICT (id) DO NOTHING;

@@ -1,0 +1,1 @@
+SET search_path TO core; ALTER TABLE locations ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE, ADD COLUMN IF NOT EXISTS created_at TIMESTAMP, ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP; UPDATE locations SET created_at = COALESCE(created_at, now()), updated_at = COALESCE(updated_at, now()) WHERE created_at IS NULL OR updated_at IS NULL;
