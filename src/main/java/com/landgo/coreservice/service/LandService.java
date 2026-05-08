@@ -2,6 +2,7 @@ package com.landgo.coreservice.service;
 
 import com.landgo.coreservice.dto.request.LandCreateRequest;
 import com.landgo.coreservice.dto.response.LandResponse;
+import com.landgo.coreservice.dto.response.VendorResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.entity.FavoriteListing;
 import com.landgo.coreservice.entity.Land;
