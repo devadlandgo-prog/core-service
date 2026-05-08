@@ -37,6 +37,9 @@ public class LandResponse {
     private UUID vendorId;
     private String vendorCompanyName;
     private boolean vendorVerified;
+    private String vendorOwnerName;
+    private String vendorOwnerEmail;
+    private boolean isFavorited;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -204,6 +204,17 @@ public class LandService {
                 favoriteRepository.findByUserIdAndLandId(currentUserId, land.getId()).isPresent();
         
         LandResponse response = landMapper.toResponse(land);
+        response.setFavorited(isFavorited);
+        
+        // Fetch vendor details from user-service
+        VendorResponse vendor = userServiceClient.getVendorProfileForUser(land.getVendorId());
+        if (vendor != null) {
+            response.setVendorCompanyName(vendor.getCompanyName());
+            response.setVendorVerified(vendor.isVerified());
+            response.setVendorOwnerName(vendor.getOwnerName());
+            response.setVendorOwnerEmail(vendor.getOwnerEmail());
+        }
+        
         return response;
     }
 
