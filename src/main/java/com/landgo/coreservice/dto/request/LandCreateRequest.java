@@ -8,12 +8,28 @@ import java.util.List;
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class LandCreateRequest {
     @NotNull(message = "Project stage is required") private ProjectStage projectStage;
-    @NotNull(message = "Project details are required") @Valid private ProjectDetailsDto projectDetails;
+    @Valid private ProjectDetailsDto projectDetails;
     @Valid private ProjectSpecificationDto projectSpecification;
-    @NotNull(message = "Pricing is required") @Valid private PricingDto pricing;
+    @Valid private PricingDto pricing;
     @Size(max = 10) private List<FileDto> photos;
     @Size(max = 25) private List<FileDto> documents;
     private String ownershipVerification;
+    private Boolean isAdmin;
+
+    // Flat payload compatibility fields (DOCX contract style)
+    private String title;
+    private String address;
+    private String city;
+    private String postalCode;
+    private CoordinatesDto coordinates;
+    private BigDecimal lotSize;
+    private String lotUnit;
+    private BigDecimal askingPrice;
+    private String currency;
+    private String description;
+    private String zoning;
+    private BigDecimal propertyTax;
+    private List<String> utilities;
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class ProjectDetailsDto {
