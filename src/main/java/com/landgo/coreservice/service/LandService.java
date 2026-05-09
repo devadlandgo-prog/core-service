@@ -138,10 +138,10 @@ public class LandService {
     }
 
     @Transactional
-    public LandResponse updateLand(UUID id, LandCreateRequest request, UUID userId) {
+    public LandResponse updateLand(UUID id, LandCreateRequest request, UUID userId, boolean isAdmin) {
         Land land = landRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
-        if (!land.getVendorId().equals(userId)) {
+        if (!isAdmin && !land.getVendorId().equals(userId)) {
             throw new ForbiddenException("You are not authorized to update this listing");
         }
         landMapper.updateEntity(request, land);
@@ -150,10 +150,10 @@ public class LandService {
     }
 
     @Transactional
-    public void deleteLand(UUID id, UUID userId) {
+    public void deleteLand(UUID id, UUID userId, boolean isAdmin) {
         Land land = landRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
-        if (!land.getVendorId().equals(userId)) {
+        if (!isAdmin && !land.getVendorId().equals(userId)) {
             throw new ForbiddenException("You are not authorized to delete this listing");
         }
         land.setDeleted(true);

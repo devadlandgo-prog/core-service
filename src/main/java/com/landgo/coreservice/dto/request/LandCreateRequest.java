@@ -64,5 +64,5 @@ public class LandCreateRequest {
         private String description;
     }
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class FileDto { @NotBlank private String name; @NotBlank private String type; @NotBlank private String url; }
+    public static class FileDto { @NotBlank private String name; private String type; @NotBlank private String url; }
 }

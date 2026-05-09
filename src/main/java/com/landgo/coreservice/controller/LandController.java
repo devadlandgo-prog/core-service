@@ -10,11 +10,13 @@ import com.landgo.coreservice.security.CurrentUser;
 import com.landgo.coreservice.service.LandService;
 import com.landgo.coreservice.dto.request.EnquiryRequest;
 import com.landgo.coreservice.service.EnquiryService;
+import com.landgo.coreservice.security.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -121,17 +123,21 @@ public class LandController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<LandResponse>> updateLand(
             @CurrentUser UUID userId,
+            @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable UUID id,
             @Valid @RequestBody LandCreateRequest request) {
-        LandResponse land = landService.updateLand(id, request, userId);
+        boolean isAdmin = principal != null && principal.getRole() == com.landgo.coreservice.enums.Role.ADMIN;
+        LandResponse land = landService.updateLand(id, request, userId, isAdmin);
         return ResponseEntity.ok(ApiResponse.success("Land listing updated successfully", land));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteLand(
             @CurrentUser UUID userId,
+            @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable UUID id) {
-        landService.deleteLand(id, userId);
+        boolean isAdmin = principal != null && principal.getRole() == com.landgo.coreservice.enums.Role.ADMIN;
+        landService.deleteLand(id, userId, isAdmin);
         return ResponseEntity.ok(ApiResponse.success("Land listing deleted successfully", null));
     }
 
