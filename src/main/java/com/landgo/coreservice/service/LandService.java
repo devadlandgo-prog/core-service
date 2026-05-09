@@ -68,6 +68,15 @@ public class LandService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<LandResponse> getAllListingsForAdmin(LandStatus status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Land> lands = (status != null)
+                ? landRepository.findByStatusAndDeletedFalse(status, pageable)
+                : landRepository.findByDeletedFalse(pageable);
+        return getPageResponse(lands);
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<LandResponse> searchLands(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Specification<Land> spec = LandSpecification.searchLands(query)

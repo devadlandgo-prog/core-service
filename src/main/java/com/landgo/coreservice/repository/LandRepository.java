@@ -24,6 +24,9 @@ public interface LandRepository extends JpaRepository<Land, UUID>, JpaSpecificat
 
     Page<Land> findByStatusAndDeletedFalse(LandStatus status, Pageable pageable);
 
+    // Admin: all listings regardless of status
+    Page<Land> findByDeletedFalse(Pageable pageable);
+
     @Query("SELECT l FROM Land l WHERE l.vendorId = :vendorId AND l.deleted = false")
     Page<Land> findByVendorId(@Param("vendorId") UUID vendorId, Pageable pageable);
 

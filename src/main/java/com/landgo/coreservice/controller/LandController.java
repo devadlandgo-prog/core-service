@@ -4,6 +4,7 @@ import com.landgo.coreservice.dto.request.LandCreateRequest;
 import com.landgo.coreservice.dto.response.ApiResponse;
 import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
+import com.landgo.coreservice.enums.LandStatus;
 import com.landgo.coreservice.enums.ProjectStage;
 import com.landgo.coreservice.security.CurrentUser;
 import com.landgo.coreservice.service.LandService;
@@ -13,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -134,12 +136,26 @@ public class LandController {
     }
 
     @PatchMapping("/{id}/status")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<LandResponse>> updateLandStatus(
             @PathVariable UUID id,
-            @RequestParam com.landgo.coreservice.enums.LandStatus status) {
+            @RequestParam LandStatus status) {
         LandResponse land = landService.updateLandStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success("Land status updated", land));
+    }
+
+    /**
+     * Admin endpoint: returns ALL listings across all statuses (PENDING_APPROVAL, ACTIVE, REJECTED, etc.).
+     * Optionally filter by a specific status via ?status=PENDING_APPROVAL
+     */
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getAllListingsForAdmin(
+            @RequestParam(required = false) LandStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        PageResponse<LandResponse> lands = landService.getAllListingsForAdmin(status, page, size);
+        return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
     @PostMapping("/{id}/favorite")
