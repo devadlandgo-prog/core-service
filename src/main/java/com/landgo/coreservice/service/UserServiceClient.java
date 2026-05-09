@@ -94,4 +94,41 @@ public class UserServiceClient {
             throw new BadRequestException("Unable to create vendor profile");
         }
     }
+
+    public Object getAllProfessionals(int page, int size) {
+        try {
+            return restTemplate.getForObject(
+                    userServiceUrl + "/internal/users/professionals?page=" + page + "&size=" + size,
+                    Object.class
+            );
+        } catch (RestClientException e) {
+            log.warn("Failed to fetch professionals from user-service: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public Object updateProfessionalProfile(UUID userId, Map<String, Object> request) {
+        try {
+            org.springframework.http.HttpEntity<Map<String, Object>> entity =
+                    new org.springframework.http.HttpEntity<>(request);
+            return restTemplate.exchange(
+                    userServiceUrl + "/internal/users/" + userId + "/professional",
+                    org.springframework.http.HttpMethod.PUT,
+                    entity,
+                    Object.class
+            ).getBody();
+        } catch (RestClientException e) {
+            log.error("Failed to update professional profile for userId={}: {}", userId, e.getMessage());
+            throw new BadRequestException("Unable to update professional profile");
+        }
+    }
+
+    public void deactivateProfessional(UUID userId) {
+        try {
+            restTemplate.delete(userServiceUrl + "/internal/users/" + userId + "/professional");
+        } catch (RestClientException e) {
+            log.error("Failed to deactivate professional userId={}: {}", userId, e.getMessage());
+            throw new BadRequestException("Unable to deactivate professional");
+        }
+    }
 }

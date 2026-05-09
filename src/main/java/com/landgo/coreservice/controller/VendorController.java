@@ -5,6 +5,7 @@ import com.landgo.coreservice.service.UserServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -53,7 +54,6 @@ public class VendorController {
             @CurrentUser UUID userId,
             @RequestBody Map<String, Object> request) {
         log.info("Professional registration request for user: {} with data: {}", userId, request);
-        // Call user-service to create vendor profile
         try {
             Object response = userServiceClient.createVendorProfile(userId, request);
             return ResponseEntity.ok(response);
@@ -61,5 +61,44 @@ public class VendorController {
             log.error("Failed to register professional for user {}: {}", userId, e.getMessage());
             return ResponseEntity.status(500).body(Map.of("success", false, "message", "Failed to register professional"));
         }
+    }
+
+    // ── Admin APIs ───────────────────────────────────────────────────────────
+
+    /**
+     * GET /core/professionals/admin/all?page=0&size=20
+     * Returns all professionals (isProfessional=true users), paginated.
+     */
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllProfessionalsForAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Object result = userServiceClient.getAllProfessionals(page, size);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * PUT /core/professionals/admin/{id}
+     * Admin updates a professional's profile fields.
+     */
+    @PutMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateProfessionalForAdmin(
+            @PathVariable UUID id,
+            @RequestBody Map<String, Object> request) {
+        Object result = userServiceClient.updateProfessionalProfile(id, request);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * DELETE /core/professionals/admin/{id}
+     * Admin deactivates a professional (soft-delete: active=false, isProfessional=false).
+     */
+    @DeleteMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deactivateProfessionalForAdmin(@PathVariable UUID id) {
+        userServiceClient.deactivateProfessional(id);
+        return ResponseEntity.ok(Map.of("success", true, "message", "Professional deactivated successfully"));
     }
 }
