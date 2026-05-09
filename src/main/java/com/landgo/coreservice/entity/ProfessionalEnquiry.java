@@ -28,6 +28,9 @@ public class ProfessionalEnquiry extends BaseEntity {
     @Column(name = "sender_email", nullable = false)
     private String senderEmail;
 
+    @Column(name = "sender_phone")
+    private String senderPhone;
+
     @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     private String message;
 

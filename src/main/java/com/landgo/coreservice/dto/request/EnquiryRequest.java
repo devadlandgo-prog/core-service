@@ -14,6 +14,8 @@ public class EnquiryRequest {
     @Email(message = "Valid email is required")
     private String senderEmail;
     
+    private String senderPhone;
+    
     @NotBlank(message = "Message is required")
     private String message;
 }

@@ -33,6 +33,9 @@ public class Enquiry {
     @Column(name = "sender_email", nullable = false)
     private String senderEmail;
 
+    @Column(name = "sender_phone")
+    private String senderPhone;
+
     @Column(columnDefinition = "TEXT", nullable = false)
     private String message;
 

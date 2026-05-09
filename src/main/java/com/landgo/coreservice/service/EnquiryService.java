@@ -19,12 +19,13 @@ public class EnquiryService {
     private final EnquiryRepository enquiryRepository;
 
     @Transactional
-    public void createEnquiry(UUID listingId, String name, String email, String message) {
+    public void createEnquiry(UUID listingId, String name, String email, String phone, String message) {
         log.info("Transaction BEGIN: Creating enquiry for listing {}", listingId);
         Enquiry enquiry = Enquiry.builder()
                 .listingId(listingId)
                 .senderName(name)
                 .senderEmail(email)
+                .senderPhone(phone)
                 .message(message)
                 .status(EnquiryStatus.PENDING)
                 .build();
