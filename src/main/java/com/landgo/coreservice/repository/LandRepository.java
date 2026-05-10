@@ -30,11 +30,7 @@ public interface LandRepository extends JpaRepository<Land, UUID>, JpaSpecificat
     @Query("SELECT l FROM Land l WHERE l.vendorId = :vendorId AND l.deleted = false")
     Page<Land> findByVendorId(@Param("vendorId") UUID vendorId, Pageable pageable);
 
-    // Using Specification in LandService instead of this query
-    // Page<Land> searchLands(@Param("search") String search, Pageable pageable);
-
-    @Query("SELECT l FROM Land l WHERE l.status = 'ACTIVE' AND l.deleted = false AND (:city IS NULL OR l.city = :city) AND (:stage IS NULL OR l.projectStage = :stage) AND (:minPrice IS NULL OR l.askingPrice >= :minPrice) AND (:maxPrice IS NULL OR l.askingPrice <= :maxPrice)")
-    Page<Land> findByFilters(@Param("city") String city, @Param("stage") ProjectStage stage, @Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice, Pageable pageable);
+    // Using Specification in LandService instead of findByFilters
 
     @Query("SELECT l FROM Land l WHERE l.status = 'ACTIVE' AND l.deleted = false ORDER BY l.createdAt DESC")
     List<Land> findRecentListings(Pageable pageable);

@@ -100,6 +100,20 @@ public class LandSpecification {
         };
     }
 
+    public static Specification<Land> isFeatured(Boolean featured) {
+        return (root, query, cb) -> {
+            if (featured == null) return cb.conjunction();
+            return cb.equal(root.get("isFeatured"), featured);
+        };
+    }
+
+    public static Specification<Land> isHotDeal(Boolean hotDeal) {
+        return (root, query, cb) -> {
+            if (hotDeal == null) return cb.conjunction();
+            return cb.equal(root.get("isHotDeal"), hotDeal);
+        };
+    }
+
     public static Specification<Land> forSavedSearchCriteria(String keyword, String city, ProjectStage stage,
                                                          BigDecimal minPrice, BigDecimal maxPrice,
                                                          BigDecimal minLotSize, BigDecimal maxLotSize) {

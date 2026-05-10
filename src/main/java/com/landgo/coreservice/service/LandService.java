@@ -87,9 +87,24 @@ public class LandService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<LandResponse> filterLands(String city, ProjectStage stage, BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Land> lands = landRepository.findByFilters(city, stage, minPrice, maxPrice, pageable);
+    public PageResponse<LandResponse> filterLands(String city, ProjectStage stage, BigDecimal minPrice, BigDecimal maxPrice, 
+                                               BigDecimal minLotSize, BigDecimal maxLotSize, Boolean isFeatured, Boolean isHotDeal,
+                                               int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        
+        Specification<Land> spec = Specification.where(LandSpecification.hasStatus("ACTIVE"))
+                .and(LandSpecification.isNotDeleted());
+
+        if (city != null && !city.isBlank()) spec = spec.and(LandSpecification.hasCity(city));
+        if (stage != null) spec = spec.and(LandSpecification.hasProjectStage(stage));
+        if (minPrice != null) spec = spec.and(LandSpecification.hasMinPrice(minPrice));
+        if (maxPrice != null) spec = spec.and(LandSpecification.hasMaxPrice(maxPrice));
+        if (minLotSize != null) spec = spec.and(LandSpecification.hasMinLotSize(minLotSize));
+        if (maxLotSize != null) spec = spec.and(LandSpecification.hasMaxLotSize(maxLotSize));
+        if (isFeatured != null) spec = spec.and(LandSpecification.isFeatured(isFeatured));
+        if (isHotDeal != null) spec = spec.and(LandSpecification.isHotDeal(isHotDeal));
+
+        Page<Land> lands = landRepository.findAll(spec, pageable);
         return getPageResponse(lands);
     }
 
