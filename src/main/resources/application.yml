@@ -37,6 +37,11 @@ app:
     user-service-url: ${USER_SERVICE_URL:http://localhost:8081}
     payment-service-url: ${PAYMENT_SERVICE_URL:http://localhost:8083}
 
+aws:
+  region: ${AWS_REGION:ca-central-1}
+  s3:
+    images-bucket: ${AWS_S3_IMAGES_BUCKET:landgo-dev-images-local}
+
 springdoc:
   api-docs:
     path: /v3/api-docs

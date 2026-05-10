@@ -209,6 +209,101 @@ public class LandService {
         return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
     }
 
+    @Transactional
+    public LandResponse addImageMetadata(UUID id, UUID vendorId, com.landgo.coreservice.dto.request.ImageConfirmRequest request) {
+        Land land = landRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
+        if (!land.getVendorId().equals(vendorId)) {
+            throw new ForbiddenException("You are not authorized to modify this listing");
+        }
+
+        List<java.util.Map<String, String>> photos = land.getPhotos();
+        if (photos == null) {
+            photos = new java.util.ArrayList<>();
+        }
+
+        if (request.isPrimary()) {
+            for (java.util.Map<String, String> photo : photos) {
+                photo.put("isPrimary", "false");
+            }
+        }
+
+        java.util.Map<String, String> newPhoto = new java.util.HashMap<>();
+        newPhoto.put("url", "https://" + System.getenv("AWS_S3_IMAGES_BUCKET") + ".s3." + System.getenv("AWS_REGION") + ".amazonaws.com/" + request.getFileKey());
+        newPhoto.put("fileKey", request.getFileKey());
+        newPhoto.put("fileName", request.getFileName());
+        newPhoto.put("isPrimary", String.valueOf(request.isPrimary()));
+        newPhoto.put("uploadedAt", java.time.LocalDateTime.now().toString());
+
+        photos.add(newPhoto);
+        land.setPhotos(photos);
+        landRepository.save(land);
+
+        return getLandResponseWithFavorite(land, vendorId);
+    }
+
+    @Transactional
+    public LandResponse removeImageMetadata(UUID id, UUID vendorId, String fileKey) {
+        Land land = landRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
+        if (!land.getVendorId().equals(vendorId)) {
+            throw new ForbiddenException("You are not authorized to modify this listing");
+        }
+
+        List<java.util.Map<String, String>> photos = land.getPhotos();
+        if (photos != null) {
+            photos.removeIf(p -> fileKey.equals(p.get("fileKey")));
+            land.setPhotos(photos);
+            landRepository.save(land);
+        }
+
+        return getLandResponseWithFavorite(land, vendorId);
+    }
+
+    @Transactional
+    public LandResponse addDocumentMetadata(UUID id, UUID vendorId, com.landgo.coreservice.dto.request.ImageConfirmRequest request) {
+        Land land = landRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
+        if (!land.getVendorId().equals(vendorId)) {
+            throw new ForbiddenException("You are not authorized to modify this listing");
+        }
+
+        List<java.util.Map<String, String>> documents = land.getDocuments();
+        if (documents == null) {
+            documents = new java.util.ArrayList<>();
+        }
+
+        java.util.Map<String, String> newDoc = new java.util.HashMap<>();
+        newDoc.put("url", "https://" + System.getenv("AWS_S3_IMAGES_BUCKET") + ".s3." + System.getenv("AWS_REGION") + ".amazonaws.com/" + request.getFileKey());
+        newDoc.put("fileKey", request.getFileKey());
+        newDoc.put("fileName", request.getFileName());
+        newDoc.put("uploadedAt", java.time.LocalDateTime.now().toString());
+
+        documents.add(newDoc);
+        land.setDocuments(documents);
+        landRepository.save(land);
+
+        return getLandResponseWithFavorite(land, vendorId);
+    }
+
+    @Transactional
+    public LandResponse removeDocumentMetadata(UUID id, UUID vendorId, String fileKey) {
+        Land land = landRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
+        if (!land.getVendorId().equals(vendorId)) {
+            throw new ForbiddenException("You are not authorized to modify this listing");
+        }
+
+        List<java.util.Map<String, String>> documents = land.getDocuments();
+        if (documents != null) {
+            documents.removeIf(p -> fileKey.equals(p.get("fileKey")));
+            land.setDocuments(documents);
+            landRepository.save(land);
+        }
+
+        return getLandResponseWithFavorite(land, vendorId);
+    }
+
     private LandResponse getLandResponseWithFavorite(Land land, UUID currentUserId) {
         boolean isFavorited = currentUserId != null && 
                 favoriteRepository.findByUserIdAndLandId(currentUserId, land.getId()).isPresent();
