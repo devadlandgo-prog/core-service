@@ -198,13 +198,22 @@ public class LandService {
     @Transactional(readOnly = true)
     public List<LandResponse> getFavoriteLands(UUID userId) {
         List<FavoriteListing> favorites = favoriteRepository.findByUserId(userId, Pageable.unpaged()).getContent();
-        return favorites.stream()
-                .map(f -> {
-                    Land land = landRepository.findByIdAndDeletedFalse(f.getLandId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Land", "id", f.getLandId()));
-                    return getLandResponseWithFavorite(land, userId);
-                })
+        
+        if (favorites.isEmpty()) {
+            throw new ResourceNotFoundException("No favorites found for this user");
+        }
+
+        List<LandResponse> result = favorites.stream()
+                .map(f -> landRepository.findByIdAndDeletedFalse(f.getLandId()))
+                .filter(java.util.Optional::isPresent)
+                .map(opt -> getLandResponseWithFavorite(opt.get(), userId))
                 .collect(Collectors.toList());
+
+        if (result.isEmpty()) {
+            throw new ResourceNotFoundException("All favorited properties have been removed or are no longer active");
+        }
+
+        return result;
     }
 
     @Transactional
