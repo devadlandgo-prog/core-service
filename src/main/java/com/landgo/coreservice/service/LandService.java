@@ -90,8 +90,23 @@ public class LandService {
     @Transactional(readOnly = true)
     public PageResponse<LandResponse> filterLands(String city, ProjectStage stage, BigDecimal minPrice, BigDecimal maxPrice, 
                                                BigDecimal minLotSize, BigDecimal maxLotSize, Boolean isFeatured, Boolean isHotDeal,
+                                               String projectType, String buildingType, String zoningType, String listingType, Integer forSaleSince,
+                                               String sortBy,
                                                int page, int size, UUID userId) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        if (sortBy != null) {
+            switch (sortBy.toLowerCase()) {
+                case "rating" -> sort = Sort.by(Sort.Direction.DESC, "vendor.rating");
+                case "reviews", "most_reviews" -> sort = Sort.by(Sort.Direction.DESC, "vendor.totalReviews");
+                case "experience", "most_experience" -> sort = Sort.by(Sort.Direction.DESC, "vendor.yearsOfExperience");
+                case "price_asc" -> sort = Sort.by(Sort.Direction.ASC, "askingPrice");
+                case "price_desc" -> sort = Sort.by(Sort.Direction.DESC, "askingPrice");
+                case "newest" -> sort = Sort.by(Sort.Direction.DESC, "createdAt");
+            }
+        }
+        
+        Pageable pageable = PageRequest.of(page, size, sort);
         
         Specification<Land> spec = Specification.where(LandSpecification.hasStatus("ACTIVE"))
                 .and(LandSpecification.isNotDeleted());
@@ -104,6 +119,13 @@ public class LandService {
         if (maxLotSize != null) spec = spec.and(LandSpecification.hasMaxLotSize(maxLotSize));
         if (isFeatured != null) spec = spec.and(LandSpecification.isFeatured(isFeatured));
         if (isHotDeal != null) spec = spec.and(LandSpecification.isHotDeal(isHotDeal));
+        
+        // New filters
+        if (projectType != null && !projectType.isBlank()) spec = spec.and(LandSpecification.hasProjectType(projectType));
+        if (buildingType != null && !buildingType.isBlank()) spec = spec.and(LandSpecification.hasBuildingType(buildingType));
+        if (listingType != null && !listingType.isBlank()) spec = spec.and(LandSpecification.hasListingType(listingType));
+        if (zoningType != null && !zoningType.isBlank()) spec = spec.and(LandSpecification.hasZoningType(zoningType));
+        if (forSaleSince != null) spec = spec.and(LandSpecification.forSaleSince(forSaleSince));
 
         Page<Land> lands = landRepository.findAll(spec, pageable);
         return getPageResponse(lands, userId);

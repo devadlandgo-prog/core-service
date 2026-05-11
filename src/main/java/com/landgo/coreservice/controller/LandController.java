@@ -85,7 +85,8 @@ public class LandController {
     }
 
     @GetMapping("/filter")
-    @Operation(summary = "Filter land listings with multiple criteria", description = "Highly flexible filtering by city, stage, price range, lot size, and featured/hot deal status.")
+    @Operation(summary = "Advanced filter for land listings", 
+               description = "Highly flexible filtering by city, stage, price range, lot size, project/building/zoning types, and for-sale duration. Supports sorting by vendor rating, reviews, and experience.")
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> filterLands(
             @CurrentUser UUID userId,
             @RequestParam(required = false) String city,
@@ -96,10 +97,18 @@ public class LandController {
             @RequestParam(required = false) BigDecimal maxLotSize,
             @RequestParam(required = false) Boolean isFeatured,
             @RequestParam(required = false) Boolean isHotDeal,
+            @RequestParam(required = false) String projectType,
+            @RequestParam(required = false) String buildingType,
+            @RequestParam(required = false) String zoningType,
+            @RequestParam(required = false) String listingType,
+            @RequestParam(required = false) Integer forSaleSince,
+            @RequestParam(required = false) String sortBy,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         PageResponse<LandResponse> lands = landService.filterLands(
-                city, stage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal, page, size, userId);
+                city, stage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal, 
+                projectType, buildingType, zoningType, listingType, forSaleSince, sortBy,
+                page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 

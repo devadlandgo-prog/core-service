@@ -16,6 +16,11 @@ import java.util.UUID;
 @Getter @Setter @SuperBuilder @NoArgsConstructor @AllArgsConstructor
 public class Land extends BaseEntity {
     @Column(name = "vendor_id", nullable = false) private UUID vendorId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vendor_id", referencedColumnName = "user_id", insertable = false, updatable = false)
+    private VendorProfile vendor;
+
     @Enumerated(EnumType.STRING) @Column(name = "project_stage", nullable = false, length = 50) private ProjectStage projectStage;
     @Enumerated(EnumType.STRING) @Column(name = "status", nullable = false, length = 50) @Builder.Default private LandStatus status = LandStatus.PENDING_APPROVAL;
     @Column(name = "address", nullable = false) private String address;

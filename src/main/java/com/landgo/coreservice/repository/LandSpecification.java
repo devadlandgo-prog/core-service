@@ -114,6 +114,45 @@ public class LandSpecification {
         };
     }
 
+    public static Specification<Land> hasProjectType(String projectType) {
+        return (root, query, cb) -> {
+            if (projectType == null || projectType.trim().isEmpty()) return cb.conjunction();
+            return cb.equal(cb.function("jsonb_extract_path_text", String.class, root.get("projectSpecification"), cb.literal("projectType")), projectType);
+        };
+    }
+
+    public static Specification<Land> hasBuildingType(String buildingType) {
+        return (root, query, cb) -> {
+            if (buildingType == null || buildingType.trim().isEmpty()) return cb.conjunction();
+            return cb.equal(cb.function("jsonb_extract_path_text", String.class, root.get("projectSpecification"), cb.literal("buildingType")), buildingType);
+        };
+    }
+
+    public static Specification<Land> hasListingType(String listingType) {
+        return (root, query, cb) -> {
+            if (listingType == null || listingType.trim().isEmpty()) return cb.conjunction();
+            return cb.equal(cb.function("jsonb_extract_path_text", String.class, root.get("projectSpecification"), cb.literal("sellingType")), listingType);
+        };
+    }
+
+    public static Specification<Land> hasZoningType(String zoningType) {
+        return (root, query, cb) -> {
+            if (zoningType == null || zoningType.trim().isEmpty()) return cb.conjunction();
+            return cb.or(
+                cb.like(cb.lower(root.get("currentZoningCodes")), "%" + zoningType.toLowerCase() + "%"),
+                cb.like(cb.lower(root.get("officialPlanDesignation")), "%" + zoningType.toLowerCase() + "%")
+            );
+        };
+    }
+
+    public static Specification<Land> forSaleSince(Integer days) {
+        return (root, query, cb) -> {
+            if (days == null) return cb.conjunction();
+            java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(days);
+            return cb.greaterThanOrEqualTo(root.get("createdAt"), since);
+        };
+    }
+
     public static Specification<Land> forSavedSearchCriteria(String keyword, String city, ProjectStage stage,
                                                          BigDecimal minPrice, BigDecimal maxPrice,
                                                          BigDecimal minLotSize, BigDecimal maxLotSize) {

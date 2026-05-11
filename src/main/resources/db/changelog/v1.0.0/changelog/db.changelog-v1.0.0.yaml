@@ -32,3 +32,13 @@ databaseChangeLog:
             path: ../dml/001_seed_reference_data.sql
             relativeToChangelogFile: true
 
+  - changeSet:
+      id: core-v1-0-0-ddl-enquiry-sender-phone
+      author: landgo
+      runOnChange: true
+      runAlways: false
+      failOnError: true
+      changes:
+        - sqlFile:
+            path: ../ddl/004_enquiry_sender_phone.sql
+            relativeToChangelogFile: true
