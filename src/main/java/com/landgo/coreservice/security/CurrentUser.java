@@ -4,5 +4,5 @@ import java.lang.annotation.*;
 @Target({ElementType.PARAMETER, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@AuthenticationPrincipal(expression = "principal instanceof T(com.landgo.coreservice.security.UserPrincipal) ? principal.id : null")
+@AuthenticationPrincipal(expression = "#this instanceof T(com.landgo.coreservice.security.UserPrincipal) ? id : null")
 public @interface CurrentUser {}
