@@ -21,6 +21,7 @@ public class VendorResponse {
     private Integer totalReviews;
     private Integer totalLandsListed;
     private Integer totalLandsSold;
+    private Integer yearsOfExperience;
     private String ownerName;
     private String ownerEmail;
     private LocalDateTime createdAt;

@@ -25,9 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -123,6 +121,53 @@ public class LandService {
         if (listingType != null && !listingType.isBlank()) spec = spec.and(LandSpecification.hasListingType(listingType));
         if (zoningType != null && !zoningType.isBlank()) spec = spec.and(LandSpecification.hasZoningType(zoningType));
         if (forSaleSince != null) spec = spec.and(LandSpecification.forSaleSince(forSaleSince));
+
+        boolean isVendorSort = sortBy != null && (
+                sortBy.equalsIgnoreCase("rating") || 
+                sortBy.equalsIgnoreCase("reviews") || 
+                sortBy.equalsIgnoreCase("most_reviews") ||
+                sortBy.equalsIgnoreCase("experience") || 
+                sortBy.equalsIgnoreCase("most_experience")
+        );
+
+        if (isVendorSort) {
+            log.debug("Applying in-memory vendor sorting for: {}", sortBy);
+            // Fetch all matching items (for small datasets as requested)
+            List<Land> allMatching = landRepository.findAll(spec);
+            List<LandResponse> allResponses = allMatching.stream()
+                    .map(land -> {
+                        LandResponse res = landMapper.toResponse(land);
+                        boolean isFav = userId != null && favoriteRepository.findByUserIdAndLandId(userId, land.getId()).isPresent();
+                        res.setFavorited(isFav);
+                        return res;
+                    })
+                    .collect(Collectors.toList());
+            
+            enrichWithVendors(allResponses);
+
+            Comparator<LandResponse> comparator = switch (sortBy.toLowerCase()) {
+                case "rating" -> Comparator.comparing(LandResponse::getVendorRating, Comparator.nullsLast(Comparator.reverseOrder()));
+                case "reviews", "most_reviews" -> Comparator.comparing(LandResponse::getVendorTotalReviews, Comparator.nullsLast(Comparator.reverseOrder()));
+                case "experience", "most_experience" -> Comparator.comparing(LandResponse::getVendorYearsOfExperience, Comparator.nullsLast(Comparator.reverseOrder()));
+                default -> Comparator.comparing(LandResponse::getCreatedAt).reversed();
+            };
+            allResponses.sort(comparator);
+
+            int total = allResponses.size();
+            int start = page * size;
+            int end = Math.min(start + size, total);
+            List<LandResponse> pagedContent = (start < total) ? allResponses.subList(start, end) : Collections.emptyList();
+
+            return PageResponse.<LandResponse>builder()
+                    .content(pagedContent)
+                    .number(page)
+                    .size(size)
+                    .totalElements((long) total)
+                    .totalPages((int) Math.ceil((double) total / size))
+                    .first(page == 0)
+                    .last(end == total)
+                    .build();
+        }
 
         Page<Land> lands = landRepository.findAll(spec, pageable);
         return getPageResponse(lands, userId);
@@ -376,6 +421,9 @@ public class LandService {
                 response.setVendorVerified(vendor.isVerified());
                 response.setVendorOwnerName(vendor.getOwnerName());
                 response.setVendorOwnerEmail(vendor.getOwnerEmail());
+                response.setVendorRating(vendor.getRating());
+                response.setVendorTotalReviews(vendor.getTotalReviews());
+                response.setVendorYearsOfExperience(vendor.getYearsOfExperience());
             }
         });
         
@@ -395,6 +443,9 @@ public class LandService {
             response.setVendorVerified(vendor.isVerified());
             response.setVendorOwnerName(vendor.getOwnerName());
             response.setVendorOwnerEmail(vendor.getOwnerEmail());
+            response.setVendorRating(vendor.getRating());
+            response.setVendorTotalReviews(vendor.getTotalReviews());
+            response.setVendorYearsOfExperience(vendor.getYearsOfExperience());
         }
         
         return response;

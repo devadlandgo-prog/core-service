@@ -102,6 +102,15 @@ public class LandResponse {
     @Schema(example = "john@acme.com")
     private String vendorOwnerEmail;
     
+    @Schema(example = "4.8")
+    private BigDecimal vendorRating;
+    
+    @Schema(example = "25")
+    private Integer vendorTotalReviews;
+    
+    @Schema(example = "10")
+    private Integer vendorYearsOfExperience;
+    
     @Schema(example = "false")
     private boolean isFavorited;
     
