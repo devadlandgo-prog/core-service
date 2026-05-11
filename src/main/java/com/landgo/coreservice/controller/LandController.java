@@ -63,26 +63,31 @@ public class LandController {
 
     @GetMapping
     @Operation(summary = "Get all active land listings (paginated)")
-    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getActiveListings(
+    public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getAllLands(
+            @CurrentUser UUID userId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.getActiveLands(page, size, "createdAt", "DESC");
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        PageResponse<LandResponse> lands = landService.getActiveLands(page, size, sortBy, sortDir, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
     @GetMapping("/search")
     @Operation(summary = "Search land listings by keyword (address or city)")
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> searchLands(
+            @CurrentUser UUID userId,
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        PageResponse<LandResponse> lands = landService.searchLands(q, page, size);
+        PageResponse<LandResponse> lands = landService.searchLands(q, page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
     @GetMapping("/filter")
     @Operation(summary = "Filter land listings with multiple criteria", description = "Highly flexible filtering by city, stage, price range, lot size, and featured/hot deal status.")
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> filterLands(
+            @CurrentUser UUID userId,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) ProjectStage stage,
             @RequestParam(required = false) BigDecimal minPrice,
@@ -94,7 +99,7 @@ public class LandController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         PageResponse<LandResponse> lands = landService.filterLands(
-                city, stage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal, page, size);
+                city, stage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal, page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
@@ -111,32 +116,36 @@ public class LandController {
     @GetMapping("/recent")
     @Operation(summary = "Get recently added listings")
     public ResponseEntity<ApiResponse<List<LandResponse>>> getRecentLands(
+            @CurrentUser UUID userId,
             @RequestParam(defaultValue = "10") int limit) {
-        List<LandResponse> lands = landService.getRecentLands(limit);
+        List<LandResponse> lands = landService.getRecentLands(limit, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
     @GetMapping("/popular")
     @Operation(summary = "Get most viewed listings")
     public ResponseEntity<ApiResponse<List<LandResponse>>> getPopularLands(
+            @CurrentUser UUID userId,
             @RequestParam(defaultValue = "10") int limit) {
-        List<LandResponse> lands = landService.getPopularLands(limit);
+        List<LandResponse> lands = landService.getPopularLands(limit, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
     @GetMapping("/featured")
     @Operation(summary = "Get featured listings")
     public ResponseEntity<ApiResponse<List<LandResponse>>> getFeaturedLands(
+            @CurrentUser UUID userId,
             @RequestParam(defaultValue = "10") int limit) {
-        List<LandResponse> lands = landService.getFeaturedLands(limit);
+        List<LandResponse> lands = landService.getFeaturedLands(limit, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
     @GetMapping("/hot-developer")
     @Operation(summary = "Get hot developer deals")
     public ResponseEntity<ApiResponse<List<LandResponse>>> getHotDeveloperDeals(
+            @CurrentUser UUID userId,
             @RequestParam(defaultValue = "10") int limit) {
-        List<LandResponse> lands = landService.getHotDeveloperDeals(limit);
+        List<LandResponse> lands = landService.getHotDeveloperDeals(limit, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 

@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -42,6 +44,18 @@ public class UserServiceClient {
         } catch (RestClientException e) {
             log.warn("Failed to fetch vendor profile from user-service for userId={}: {}", userId, e.getMessage());
             return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<UUID, VendorResponse> getVendorProfilesBatch(List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) return Map.of();
+        try {
+            String ids = userIds.stream().map(UUID::toString).collect(Collectors.joining(","));
+            return restTemplate.getForObject(userServiceUrl + "/internal/users/vendors/batch?userIds=" + ids, Map.class);
+        } catch (RestClientException e) {
+            log.warn("Failed to fetch vendor profiles batch from user-service: {}", e.getMessage());
+            return Map.of();
         }
     }
 

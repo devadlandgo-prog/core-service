@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -61,10 +62,10 @@ public class LandService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<LandResponse> getActiveLands(int page, int size, String sortBy, String sortDir) {
+    public PageResponse<LandResponse> getActiveLands(int page, int size, String sortBy, String sortDir, UUID userId) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDir), sortBy));
         Page<Land> lands = landRepository.findByStatusAndDeletedFalse(LandStatus.ACTIVE, pageable);
-        return getPageResponse(lands);
+        return getPageResponse(lands, userId);
     }
 
     @Transactional(readOnly = true)
@@ -73,23 +74,23 @@ public class LandService {
         Page<Land> lands = (status != null)
                 ? landRepository.findByStatusAndDeletedFalse(status, pageable)
                 : landRepository.findByDeletedFalse(pageable);
-        return getPageResponse(lands);
+        return getPageResponse(lands, null);
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<LandResponse> searchLands(String query, int page, int size) {
+    public PageResponse<LandResponse> searchLands(String query, int page, int size, UUID userId) {
         Pageable pageable = PageRequest.of(page, size);
         Specification<Land> spec = LandSpecification.searchLands(query)
                 .and(LandSpecification.hasStatus("ACTIVE"))
                 .and(LandSpecification.isNotDeleted());
         Page<Land> lands = landRepository.findAll(spec, pageable);
-        return getPageResponse(lands);
+        return getPageResponse(lands, userId);
     }
 
     @Transactional(readOnly = true)
     public PageResponse<LandResponse> filterLands(String city, ProjectStage stage, BigDecimal minPrice, BigDecimal maxPrice, 
                                                BigDecimal minLotSize, BigDecimal maxLotSize, Boolean isFeatured, Boolean isHotDeal,
-                                               int page, int size) {
+                                               int page, int size, UUID userId) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         
         Specification<Land> spec = Specification.where(LandSpecification.hasStatus("ACTIVE"))
@@ -105,42 +106,46 @@ public class LandService {
         if (isHotDeal != null) spec = spec.and(LandSpecification.isHotDeal(isHotDeal));
 
         Page<Land> lands = landRepository.findAll(spec, pageable);
-        return getPageResponse(lands);
+        return getPageResponse(lands, userId);
     }
 
     @Transactional(readOnly = true)
     public PageResponse<LandResponse> getMyLands(UUID vendorId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Land> lands = landRepository.findByVendorId(vendorId, pageable);
-        return getPageResponse(lands);
+        return getPageResponse(lands, vendorId);
     }
 
     @Transactional(readOnly = true)
-    public List<LandResponse> getRecentLands(int limit) {
+    public List<LandResponse> getRecentLands(int limit, UUID userId) {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
-        List<Land> lands = landRepository.findRecentListings(pageable);
-        return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
+        List<Land> lands = landRepository.findByStatusAndDeletedFalse(LandStatus.ACTIVE, pageable).getContent();
+        List<LandResponse> responses = lands.stream().map(land -> getLandResponseWithFavorite(land, userId)).collect(Collectors.toList());
+        return enrichWithVendors(responses);
     }
 
     @Transactional(readOnly = true)
-    public List<LandResponse> getPopularLands(int limit) {
+    public List<LandResponse> getPopularLands(int limit, UUID userId) {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "viewCount"));
-        List<Land> lands = landRepository.findPopularListings(pageable);
-        return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
+        List<Land> lands = landRepository.findByStatusAndDeletedFalse(LandStatus.ACTIVE, pageable).getContent();
+        List<LandResponse> responses = lands.stream().map(land -> getLandResponseWithFavorite(land, userId)).collect(Collectors.toList());
+        return enrichWithVendors(responses);
     }
 
     @Transactional(readOnly = true)
-    public List<LandResponse> getFeaturedLands(int limit) {
+    public List<LandResponse> getFeaturedLands(int limit, UUID userId) {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
         List<Land> lands = landRepository.findFeaturedListings(pageable).getContent();
-        return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
+        List<LandResponse> responses = lands.stream().map(land -> getLandResponseWithFavorite(land, userId)).collect(Collectors.toList());
+        return enrichWithVendors(responses);
     }
 
     @Transactional(readOnly = true)
-    public List<LandResponse> getHotDeveloperDeals(int limit) {
+    public List<LandResponse> getHotDeveloperDeals(int limit, UUID userId) {
         Pageable pageable = PageRequest.of(0, limit);
         List<Land> lands = landRepository.findHotDeveloperDeals(pageable).getContent();
-        return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
+        List<LandResponse> responses = lands.stream().map(land -> getLandResponseWithFavorite(land, userId)).collect(Collectors.toList());
+        return enrichWithVendors(responses);
     }
 
     @Transactional
@@ -206,14 +211,20 @@ public class LandService {
         List<LandResponse> result = favorites.stream()
                 .map(f -> landRepository.findByIdAndDeletedFalse(f.getLandId()))
                 .filter(java.util.Optional::isPresent)
-                .map(opt -> getLandResponseWithFavorite(opt.get(), userId))
+                .map(opt -> {
+                    Land land = opt.get();
+                    boolean isFavorited = favoriteRepository.findByUserIdAndLandId(userId, land.getId()).isPresent();
+                    LandResponse response = landMapper.toResponse(land);
+                    response.setFavorited(isFavorited);
+                    return response;
+                })
                 .collect(Collectors.toList());
 
         if (result.isEmpty()) {
             throw new ResourceNotFoundException("All favorited properties have been removed or are no longer active");
         }
 
-        return result;
+        return enrichWithVendors(result);
     }
 
     @Transactional
@@ -229,8 +240,9 @@ public class LandService {
     @Transactional(readOnly = true)
     public List<LandResponse> getLandsByVendor(UUID vendorId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        List<Land> lands = landRepository.findByVendorId(vendorId, pageable).getContent();
-        return lands.stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
+        Page<Land> lands = landRepository.findByVendorId(vendorId, pageable);
+        List<LandResponse> responses = lands.getContent().stream().map(land -> getLandResponseWithFavorite(land, null)).collect(Collectors.toList());
+        return enrichWithVendors(responses);
     }
 
     @Transactional
@@ -328,6 +340,29 @@ public class LandService {
         return getLandResponseWithFavorite(land, vendorId);
     }
 
+    private List<LandResponse> enrichWithVendors(List<LandResponse> responses) {
+        if (responses == null || responses.isEmpty()) return responses;
+        
+        List<UUID> vendorIds = responses.stream()
+                .map(LandResponse::getVendorId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        Map<UUID, VendorResponse> vendorMap = userServiceClient.getVendorProfilesBatch(vendorIds);
+        
+        responses.forEach(response -> {
+            VendorResponse vendor = vendorMap.get(response.getVendorId());
+            if (vendor != null) {
+                response.setVendorCompanyName(vendor.getCompanyName());
+                response.setVendorVerified(vendor.isVerified());
+                response.setVendorOwnerName(vendor.getOwnerName());
+                response.setVendorOwnerEmail(vendor.getOwnerEmail());
+            }
+        });
+        
+        return responses;
+    }
+
     private LandResponse getLandResponseWithFavorite(Land land, UUID currentUserId) {
         boolean isFavorited = currentUserId != null && 
                 favoriteRepository.findByUserIdAndLandId(currentUserId, land.getId()).isPresent();
@@ -335,7 +370,6 @@ public class LandService {
         LandResponse response = landMapper.toResponse(land);
         response.setFavorited(isFavorited);
         
-        // Fetch vendor details from user-service
         VendorResponse vendor = userServiceClient.getVendorProfileForUser(land.getVendorId());
         if (vendor != null) {
             response.setVendorCompanyName(vendor.getCompanyName());
@@ -347,10 +381,19 @@ public class LandService {
         return response;
     }
 
-    private PageResponse<LandResponse> getPageResponse(Page<Land> lands) {
+    private PageResponse<LandResponse> getPageResponse(Page<Land> lands, UUID userId) {
         List<LandResponse> content = lands.getContent().stream()
-                .map(land -> getLandResponseWithFavorite(land, null))
+                .map(land -> {
+                    boolean isFavorited = userId != null && 
+                            favoriteRepository.findByUserIdAndLandId(userId, land.getId()).isPresent();
+                    LandResponse response = landMapper.toResponse(land);
+                    response.setFavorited(isFavorited);
+                    return response;
+                })
                 .collect(Collectors.toList());
+        
+        enrichWithVendors(content);
+        
         return PageResponse.<LandResponse>builder()
                 .content(content).number(lands.getNumber()).size(lands.getSize())
                 .totalElements(lands.getTotalElements()).totalPages(lands.getTotalPages())
