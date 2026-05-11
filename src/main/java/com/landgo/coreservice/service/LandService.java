@@ -97,9 +97,6 @@ public class LandService {
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
         if (sortBy != null) {
             switch (sortBy.toLowerCase()) {
-                case "rating" -> sort = Sort.by(Sort.Direction.DESC, "vendor.rating");
-                case "reviews", "most_reviews" -> sort = Sort.by(Sort.Direction.DESC, "vendor.totalReviews");
-                case "experience", "most_experience" -> sort = Sort.by(Sort.Direction.DESC, "vendor.yearsOfExperience");
                 case "price_asc" -> sort = Sort.by(Sort.Direction.ASC, "askingPrice");
                 case "price_desc" -> sort = Sort.by(Sort.Direction.DESC, "askingPrice");
                 case "newest" -> sort = Sort.by(Sort.Direction.DESC, "createdAt");

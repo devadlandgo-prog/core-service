@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -52,7 +55,15 @@ public class UserServiceClient {
         if (userIds == null || userIds.isEmpty()) return Map.of();
         try {
             String ids = userIds.stream().map(UUID::toString).collect(Collectors.joining(","));
-            return restTemplate.getForObject(userServiceUrl + "/internal/users/vendors/batch?userIds=" + ids, Map.class);
+            String url = userServiceUrl + "/internal/users/vendors/batch?userIds=" + ids;
+            
+            ResponseEntity<Map<UUID, VendorResponse>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<Map<UUID, VendorResponse>>() {}
+            );
+            return response.getBody() != null ? response.getBody() : Map.of();
         } catch (RestClientException e) {
             log.warn("Failed to fetch vendor profiles batch from user-service: {}", e.getMessage());
             return Map.of();
