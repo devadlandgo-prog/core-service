@@ -27,10 +27,10 @@ public class Enquiry {
     @Column(name = "professional_id")
     private UUID professionalId;
 
-    @Column(name = "sender_name", nullable = false)
+    @Column(name = "sender_name", nullable = true)
     private String senderName;
 
-    @Column(name = "sender_email", nullable = false)
+    @Column(name = "sender_email", nullable = true)
     private String senderEmail;
 
     @Column(name = "sender_phone")

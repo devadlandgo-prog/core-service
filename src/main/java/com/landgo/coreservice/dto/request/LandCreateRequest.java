@@ -23,6 +23,9 @@ public class LandCreateRequest {
     @Schema(example = "Verified by LandGo team")
     private String ownershipVerification;
     
+    @Schema(example = "USER-12345")
+    private String personalUserId;
+    
     private Boolean isAdmin;
 
     // Flat payload compatibility fields (DOCX contract style)

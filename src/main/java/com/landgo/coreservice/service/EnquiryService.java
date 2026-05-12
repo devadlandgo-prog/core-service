@@ -19,8 +19,20 @@ public class EnquiryService {
     private final EnquiryRepository enquiryRepository;
 
     @Transactional
-    public void createEnquiry(UUID listingId, String name, String email, String phone, String message) {
+    public void createEnquiry(UUID listingId, String senderNameOrEmail, String phone, String message) {
         log.info("Transaction BEGIN: Creating enquiry for listing {}", listingId);
+        
+        String name = null;
+        String email = null;
+        
+        if (senderNameOrEmail != null && senderNameOrEmail.contains("@")) {
+            email = senderNameOrEmail;
+            // Optionally set name to the part before @ if we want to be smart
+            name = senderNameOrEmail.split("@")[0];
+        } else {
+            name = senderNameOrEmail;
+        }
+
         Enquiry enquiry = Enquiry.builder()
                 .listingId(listingId)
                 .senderName(name)

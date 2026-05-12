@@ -7,12 +7,8 @@ import lombok.Data;
 @Data
 public class EnquiryRequest {
     
-    @NotBlank(message = "Sender name is required")
-    private String senderName;
-    
-    @NotBlank(message = "Sender email is required")
-    @Email(message = "Valid email is required")
-    private String senderEmail;
+    @NotBlank(message = "Sender name or email is required")
+    private String senderNameOrEmail;
     
     private String senderPhone;
     

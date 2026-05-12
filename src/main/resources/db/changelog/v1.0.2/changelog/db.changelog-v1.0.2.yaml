@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260512-make-enquiry-fields-nullable
+      author: antigravity
+      changes:
+        - sqlFile:
+            path: ../ddl/001_make_enquiry_fields_nullable.sql
+            relativeToChangelogFile: true

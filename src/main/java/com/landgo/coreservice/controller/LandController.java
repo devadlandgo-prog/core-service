@@ -221,7 +221,7 @@ public class LandController {
     public ResponseEntity<ApiResponse<Void>> sendEnquiry(
             @PathVariable UUID id,
             @Valid @RequestBody EnquiryRequest request) {
-        enquiryService.createEnquiry(id, request.getSenderName(), request.getSenderEmail(), request.getSenderPhone(), request.getMessage());
+        enquiryService.createEnquiry(id, request.getSenderNameOrEmail(), request.getSenderPhone(), request.getMessage());
         return ResponseEntity.ok(ApiResponse.success("Enquiry sent successfully", null));
     }
 }
