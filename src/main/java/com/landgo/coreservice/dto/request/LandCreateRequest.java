@@ -23,7 +23,7 @@ public class LandCreateRequest {
     @Schema(example = "Verified by LandGo team")
     private String ownershipVerification;
     
-    @Schema(example = "USER-12345")
+    @Schema(example = "Passport")
     private String personalUserId;
     
     private Boolean isAdmin;

@@ -1,6 +1,7 @@
 package com.landgo.coreservice.controller;
 
 import com.landgo.coreservice.dto.request.ImageUploadRequest;
+import com.landgo.coreservice.dto.request.PresignedReadUrlRequest;
 import com.landgo.coreservice.dto.response.PresignedUrlResponse;
 import com.landgo.coreservice.service.ImageStorageService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +36,24 @@ public class UploadController {
         // Store in a meaningful path: e.g. "uploads/listings/drafts/{uuid}"
         String directory = "uploads/" + context + "/drafts/" + UUID.randomUUID().toString();
         PresignedUrlResponse response = imageStorageService.generatePresignedUrl(request, directory);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/presigned-read-url")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(
+        summary = "Generate a pre-signed S3 GET URL to read/display a private file",
+        description = "Returns a temporary signed URL (default 60 min, max 720 min) that allows the client to fetch a private S3 object directly.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<PresignedUrlResponse> generatePresignedReadUrl(
+            @Valid @RequestBody PresignedReadUrlRequest request) {
+
+        int expiry = (request.getExpiryMinutes() != null && request.getExpiryMinutes() > 0)
+                ? request.getExpiryMinutes()
+                : 60;
+
+        PresignedUrlResponse response = imageStorageService.generatePresignedReadUrl(request.getFileKey(), expiry);
         return ResponseEntity.ok(response);
     }
 }

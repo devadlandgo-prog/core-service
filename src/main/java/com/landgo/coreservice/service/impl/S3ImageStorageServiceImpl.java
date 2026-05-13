@@ -13,6 +13,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -56,6 +59,30 @@ public class S3ImageStorageServiceImpl implements ImageStorageService {
                 .url(presignedRequest.url().toString())
                 .fileKey(fileKey)
                 .method("PUT")
+                .build();
+    }
+
+    @Override
+    public PresignedUrlResponse generatePresignedReadUrl(String fileKey, int expiryMinutes) {
+        int clampedExpiry = Math.min(Math.max(expiryMinutes, 1), 720);
+
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileKey)
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(clampedExpiry))
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+        log.info("Generated presigned read URL for fileKey: {} (expiry: {} min)", fileKey, clampedExpiry);
+
+        return PresignedUrlResponse.builder()
+                .url(presignedRequest.url().toString())
+                .fileKey(fileKey)
+                .method("GET")
                 .build();
     }
 
