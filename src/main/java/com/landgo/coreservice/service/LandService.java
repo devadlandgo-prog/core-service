@@ -421,6 +421,7 @@ public class LandService {
                 response.setVendorVerified(vendor.isVerified());
                 response.setVendorOwnerName(vendor.getOwnerName());
                 response.setVendorOwnerEmail(vendor.getOwnerEmail());
+                response.setVendorPhoneNumber(vendor.getPhoneNumber());
                 response.setVendorRating(vendor.getRating());
                 response.setVendorTotalReviews(vendor.getTotalReviews());
                 response.setVendorYearsOfExperience(vendor.getYearsOfExperience());
@@ -443,6 +444,7 @@ public class LandService {
             response.setVendorVerified(vendor.isVerified());
             response.setVendorOwnerName(vendor.getOwnerName());
             response.setVendorOwnerEmail(vendor.getOwnerEmail());
+            response.setVendorPhoneNumber(vendor.getPhoneNumber());
             response.setVendorRating(vendor.getRating());
             response.setVendorTotalReviews(vendor.getTotalReviews());
             response.setVendorYearsOfExperience(vendor.getYearsOfExperience());

@@ -108,6 +108,9 @@ public class LandResponse {
 
     @Schema(example = "john@acme.com")
     private String vendorOwnerEmail;
+    
+    @Schema(example = "+1234567890")
+    private String vendorPhoneNumber;
 
     @Schema(example = "4.8")
     private BigDecimal vendorRating;

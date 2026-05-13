@@ -24,5 +24,6 @@ public class VendorResponse {
     private Integer yearsOfExperience;
     private String ownerName;
     private String ownerEmail;
+    private String phoneNumber;
     private LocalDateTime createdAt;
 }
