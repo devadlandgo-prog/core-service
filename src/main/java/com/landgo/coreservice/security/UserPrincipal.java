@@ -5,8 +5,8 @@ import org.springframework.security.core.GrantedAuthority; import org.springfram
 import java.util.Collection; import java.util.List; import java.util.UUID;
 @Getter @AllArgsConstructor
 public class UserPrincipal implements UserDetails {
-    private UUID id; private Role role; private Collection<? extends GrantedAuthority> authorities;
-    public static UserPrincipal create(UUID id, String role) { Role r = Role.valueOf(role); return new UserPrincipal(id, r, List.of(new SimpleGrantedAuthority("ROLE_" + role))); }
+    private UUID id; private String email; private Role role; private Collection<? extends GrantedAuthority> authorities;
+    public static UserPrincipal create(UUID id, String email, String role) { Role r = Role.valueOf(role); return new UserPrincipal(id, email, r, List.of(new SimpleGrantedAuthority("ROLE_" + role))); }
     @Override public String getUsername() { return id.toString(); }
     @Override public String getPassword() { return null; }
     @Override public boolean isAccountNonExpired() { return true; }

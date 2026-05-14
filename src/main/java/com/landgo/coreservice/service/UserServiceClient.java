@@ -85,12 +85,12 @@ public class UserServiceClient {
 
     public Map<String, String> createProfessionalSubscriptionIntent(UUID userId, ProfessionalSubscriptionRequest request) {
         try {
-            Map<String, Object> payload = Map.of(
-                    "planId", request.getPlanId(),
-                    "subscriptionType", request.getSubscriptionType(),
-                    "paymentMethodId", request.getPaymentMethodId(),
-                    "autoRenew", request.isAutoRenew()
-            );
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("planId", request.getPlanId());
+            payload.put("subscriptionType", request.getSubscriptionType());
+            payload.put("paymentMethodId", request.getPaymentMethodId());
+            payload.put("autoRenew", request.isAutoRenew());
+            payload.put("email", request.getEmail());
             @SuppressWarnings("unchecked")
             Map<String, String> response = restTemplate.postForObject(
                     paymentServiceUrl + "/internal/subscriptions/user/" + userId + "/intent",

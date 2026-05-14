@@ -12,8 +12,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try { String jwt = getJwt(request);
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                UUID userId = tokenProvider.getUserIdFromToken(jwt); String role = tokenProvider.getRoleFromToken(jwt);
-                UserPrincipal up = UserPrincipal.create(userId, role);
+                UUID userId = tokenProvider.getUserIdFromToken(jwt); String role = tokenProvider.getRoleFromToken(jwt); String email = tokenProvider.getEmailFromToken(jwt);
+                UserPrincipal up = UserPrincipal.create(userId, email, role);
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(up, null, up.getAuthorities());
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);

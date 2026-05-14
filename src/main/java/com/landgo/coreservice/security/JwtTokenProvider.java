@@ -9,6 +9,7 @@ public class JwtTokenProvider {
     public JwtTokenProvider(@Value("${app.jwt.secret}") String jwtSecret) { this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)); }
     public UUID getUserIdFromToken(String token) { return UUID.fromString(Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().getSubject()); }
     public String getRoleFromToken(String token) { return (String) Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().get("role"); }
+    public String getEmailFromToken(String token) { return (String) Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().get("email"); }
     public boolean validateToken(String token) {
         try { Jwts.parser().verifyWith(key).build().parseSignedClaims(token); return true; }
         catch (MalformedJwtException ex) { log.error("Invalid JWT token"); }

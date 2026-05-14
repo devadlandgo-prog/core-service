@@ -20,6 +20,8 @@ public class ProfessionalSubscriptionRequest {
     @NotBlank(message = "paymentMethodId is required")
     private String paymentMethodId;
 
+    private String email;
+
     @Builder.Default
     private boolean autoRenew = true;
 }
