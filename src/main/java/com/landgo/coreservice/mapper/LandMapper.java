@@ -35,6 +35,7 @@ public class LandMapper {
                 .ownershipVerification(land.getOwnershipVerification())
                 .viewCount(land.getViewCount()).inquiryCount(land.getInquiryCount())
                 .isFeatured(land.isFeatured()).isHotDeal(land.isHotDeal())
+                .agentManagement(land.isAgentManagement())
                 .personalUserId(land.getPersonalUserId())
                 .createdAt(land.getCreatedAt()).updatedAt(land.getUpdatedAt());
         
@@ -59,6 +60,7 @@ public class LandMapper {
         }
         land.setOwnershipVerification(request.getOwnershipVerification());
         land.setPersonalUserId(request.getPersonalUserId());
+        land.setAgentManagement(request.getAgentManagement() != null ? request.getAgentManagement() : false);
         land.setViewCount(0); land.setInquiryCount(0);
         LandCreateRequest.ProjectDetailsDto details = request.getProjectDetails();
         if (details == null && request.getAddress() != null) {
@@ -135,5 +137,8 @@ public class LandMapper {
         if (request.getDocuments() != null) { land.setDocuments(request.getDocuments().stream().map(f -> { Map<String, String> m = new LinkedHashMap<>(); m.put("name", f.getName()); m.put("type", f.getType()); m.put("url", f.getUrl()); return m; }).collect(Collectors.toList())); }
         land.setOwnershipVerification(request.getOwnershipVerification());
         land.setPersonalUserId(request.getPersonalUserId());
+        if (request.getAgentManagement() != null) {
+            land.setAgentManagement(request.getAgentManagement());
+        }
     }
 }

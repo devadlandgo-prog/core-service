@@ -7,3 +7,10 @@ databaseChangeLog:
         - sqlFile:
             path: ../ddl/002_mock_data.sql
             relativeToChangelogFile: true
+  - changeSet:
+      id: 20260516-add-agent-management-column
+      author: system
+      changes:
+        - sqlFile:
+            path: ../ddl/003_add_agent_management_to_lands.sql
+            relativeToChangelogFile: true

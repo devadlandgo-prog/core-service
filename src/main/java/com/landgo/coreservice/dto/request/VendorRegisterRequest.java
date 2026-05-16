@@ -1,5 +1,4 @@
 package com.landgo.coreservice.dto.request;
-import com.landgo.coreservice.enums.SpecializationType;
 import jakarta.validation.constraints.*;
 import lombok.*;
 @Data @Builder @NoArgsConstructor @AllArgsConstructor

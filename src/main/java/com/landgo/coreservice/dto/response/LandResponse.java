@@ -91,6 +91,9 @@ public class LandResponse {
     @Schema(example = "false")
     private boolean isHotDeal;
 
+    @Schema(example = "false")
+    private boolean agentManagement;
+
     @Schema(example = "PASSPORT")
     private String personalUserId;
 

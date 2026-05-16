@@ -46,5 +46,6 @@ public class Land extends BaseEntity {
     @Column(name = "inquiry_count") @Builder.Default private Integer inquiryCount = 0;
     @Column(name = "is_featured") @Builder.Default private boolean isFeatured = false;
     @Column(name = "is_hot_deal") @Builder.Default private boolean isHotDeal = false;
+    @Column(name = "agent_management") @Builder.Default private boolean agentManagement = false;
     @Column(name = "personal_user_id") private String personalUserId;
 }

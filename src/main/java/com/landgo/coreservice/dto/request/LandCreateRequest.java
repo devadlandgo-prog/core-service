@@ -26,6 +26,9 @@ public class LandCreateRequest {
     @Schema(example = "Passport")
     private String personalUserId;
     
+    @Schema(example = "false")
+    private Boolean agentManagement;
+    
     private Boolean isAdmin;
 
     // Flat payload compatibility fields (DOCX contract style)
