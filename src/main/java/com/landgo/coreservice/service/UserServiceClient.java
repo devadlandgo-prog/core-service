@@ -73,13 +73,36 @@ public class UserServiceClient {
     public boolean hasActiveSubscription(UUID userId) {
         try {
             Map<?, ?> response = restTemplate.getForObject(
-                paymentServiceUrl + "/internal/subscriptions/user/" + userId + "/active", 
+                paymentServiceUrl + "/internal/subscriptions/user/" + userId + "/active",
                 Map.class
             );
             return response != null && Boolean.TRUE.equals(response.get("active"));
         } catch (RestClientException e) {
             log.warn("Failed to check active subscription from payment-service for userId={}: {}", userId, e.getMessage());
             return false;
+        }
+    }
+
+    public Integer getUserMaxListings(UUID userId) {
+        try {
+            Map<?, ?> response = restTemplate.getForObject(
+                paymentServiceUrl + "/internal/subscriptions/user/" + userId + "/plan",
+                Map.class
+            );
+            if (response != null && response.containsKey("data")) {
+                Map<?, ?> data = (Map<?, ?>) response.get("data");
+                if (data != null && data.containsKey("maxListings")) {
+                    Object maxListings = data.get("maxListings");
+                    if (maxListings instanceof Integer) {
+                        return (Integer) maxListings;
+                    }
+                }
+            }
+            // Return null if no subscription or maxListings not set (unlimited)
+            return null;
+        } catch (RestClientException e) {
+            log.warn("Failed to fetch maxListings from payment-service for userId={}: {}", userId, e.getMessage());
+            return null;
         }
     }
 

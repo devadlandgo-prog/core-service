@@ -41,6 +41,18 @@ public class LandService {
     @Transactional
     public LandResponse createLand(LandCreateRequest request, UUID vendorId) {
         log.debug("Creating land for vendorId: {}", vendorId);
+
+        // Check maxListings limit based on subscription
+        Integer maxListings = userServiceClient.getUserMaxListings(vendorId);
+        if (maxListings != null) {
+            long currentListingCount = landRepository.countAllByVendorIdAndDeletedFalse(vendorId);
+            if (currentListingCount >= maxListings) {
+                throw new com.landgo.coreservice.exception.BadRequestException(
+                    String.format("You have reached your maximum listing limit of %d. Please upgrade your subscription to post more listings.", maxListings)
+                );
+            }
+        }
+
         Land land = landMapper.toEntity(request);
         land.setVendorId(vendorId);
         land.setStatus(LandStatus.PENDING_APPROVAL);
