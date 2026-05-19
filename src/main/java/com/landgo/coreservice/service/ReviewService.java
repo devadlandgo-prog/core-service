@@ -89,6 +89,9 @@ public class ReviewService {
 
     private ReviewResponse toResponse(Review review) {
         UserResponse author = userServiceClient.getUserById(review.getAuthorId());
+        // Initialize lazy collections before session closes
+        review.getTags().size();
+        review.getPhotos().size();
         return ReviewResponse.builder()
                 .id(review.getId())
                 .professionalId(review.getProfessionalId())
