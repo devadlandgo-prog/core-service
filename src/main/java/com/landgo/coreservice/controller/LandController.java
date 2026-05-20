@@ -6,6 +6,10 @@ import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.enums.LandStatus;
 import com.landgo.coreservice.enums.ProjectStage;
+import com.landgo.coreservice.enums.ProjectType;
+import com.landgo.coreservice.enums.BuildingType;
+import com.landgo.coreservice.enums.ZoningType;
+import com.landgo.coreservice.enums.ListingType;
 import com.landgo.coreservice.security.CurrentUser;
 import com.landgo.coreservice.service.LandService;
 import com.landgo.coreservice.dto.request.EnquiryRequest;
@@ -20,6 +24,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -84,8 +89,53 @@ public class LandController {
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
+    @GetMapping("/filter-options/project-stage")
+    @Operation(summary = "Get available project stage options")
+    public ResponseEntity<ApiResponse<List<String>>> getProjectStageOptions() {
+        List<String> options = Arrays.stream(ProjectStage.values())
+                .map(ProjectStage::name)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(options));
+    }
+
+    @GetMapping("/filter-options/project-type")
+    @Operation(summary = "Get available project type options")
+    public ResponseEntity<ApiResponse<List<String>>> getProjectTypeOptions() {
+        List<String> options = Arrays.stream(ProjectType.values())
+                .map(ProjectType::name)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(options));
+    }
+
+    @GetMapping("/filter-options/building-type")
+    @Operation(summary = "Get available building type options")
+    public ResponseEntity<ApiResponse<List<String>>> getBuildingTypeOptions() {
+        List<String> options = Arrays.stream(BuildingType.values())
+                .map(BuildingType::name)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(options));
+    }
+
+    @GetMapping("/filter-options/zoning-type")
+    @Operation(summary = "Get available zoning type options")
+    public ResponseEntity<ApiResponse<List<String>>> getZoningTypeOptions() {
+        List<String> options = Arrays.stream(ZoningType.values())
+                .map(ZoningType::name)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(options));
+    }
+
+    @GetMapping("/filter-options/listing-type")
+    @Operation(summary = "Get available listing type options")
+    public ResponseEntity<ApiResponse<List<String>>> getListingTypeOptions() {
+        List<String> options = Arrays.stream(ListingType.values())
+                .map(ListingType::name)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(options));
+    }
+
     @GetMapping("/filter")
-    @Operation(summary = "Advanced filter for land listings", 
+    @Operation(summary = "Advanced filter for land listings",
                description = "Highly flexible filtering by city, stage, price range, lot size, project/building/zoning types, and for-sale duration. Supports sorting by vendor rating, reviews, and experience.")
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> filterLands(
             @CurrentUser UUID userId,
@@ -97,17 +147,21 @@ public class LandController {
             @RequestParam(required = false) BigDecimal maxLotSize,
             @RequestParam(required = false) Boolean isFeatured,
             @RequestParam(required = false) Boolean isHotDeal,
-            @RequestParam(required = false) String projectType,
-            @RequestParam(required = false) String buildingType,
-            @RequestParam(required = false) String zoningType,
-            @RequestParam(required = false) String listingType,
+            @RequestParam(required = false) ProjectType projectType,
+            @RequestParam(required = false) BuildingType buildingType,
+            @RequestParam(required = false) ZoningType zoningType,
+            @RequestParam(required = false) ListingType listingType,
             @RequestParam(required = false) Integer forSaleSince,
             @RequestParam(required = false) String sortBy,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         PageResponse<LandResponse> lands = landService.filterLands(
-                city, stage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal, 
-                projectType, buildingType, zoningType, listingType, forSaleSince, sortBy,
+                city, stage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
+                projectType != null ? projectType.name() : null,
+                buildingType != null ? buildingType.name() : null,
+                zoningType != null ? zoningType.name() : null,
+                listingType != null ? listingType.name() : null,
+                forSaleSince, sortBy,
                 page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
