@@ -51,7 +51,11 @@ public class LandSpecification {
             if (city == null || city.trim().isEmpty()) {
                 return cb.conjunction();
             }
-            return cb.equal(cb.lower(root.get("city")), city.toLowerCase());
+            String cityPattern = "%" + city.trim().toLowerCase() + "%";
+            return cb.or(
+                    cb.like(cb.lower(root.get("city")), cityPattern),
+                    cb.like(cb.lower(root.get("address")), cityPattern)
+            );
         };
     }
 

@@ -42,7 +42,7 @@ public class UploadController {
     @PostMapping("/presigned-read-url")
     @PreAuthorize("isAuthenticated()")
     @Operation(
-        summary = "Generate a pre-signed S3 GET URL to read/display a private file",
+        summary = "Generate a pre-signed S3 GET URL from a stored fileKey",
         description = "Returns a temporary signed URL (default 60 min, max 720 min) that allows the client to fetch a private S3 object directly.",
         security = @SecurityRequirement(name = "bearerAuth")
     )
@@ -55,5 +55,17 @@ public class UploadController {
 
         PresignedUrlResponse response = imageStorageService.generatePresignedReadUrl(request.getFileKey(), expiry);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/presigned-url/read")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(
+        summary = "Generate a pre-signed S3 GET URL from a stored fileKey (alias)",
+        description = "Backward-compatible alias for read-url generation using fileKey.",
+        security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<PresignedUrlResponse> generatePresignedReadUrlAlias(
+            @Valid @RequestBody PresignedReadUrlRequest request) {
+        return generatePresignedReadUrl(request);
     }
 }

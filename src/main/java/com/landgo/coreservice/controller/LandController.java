@@ -136,34 +136,57 @@ public class LandController {
 
     @GetMapping("/filter")
     @Operation(summary = "Advanced filter for land listings",
-               description = "Highly flexible filtering by city, stage, price range, lot size, project/building/zoning types, and for-sale duration. Supports sorting by vendor rating, reviews, and experience.")
+               description = "Highly flexible filtering by city/q, stage, price range, lot size, project/building/zoning/listing types, and for-sale duration. Supports sorting by vendor rating, reviews, and experience.")
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> filterLands(
             @CurrentUser UUID userId,
             @RequestParam(required = false) String city,
-            @RequestParam(required = false) ProjectStage stage,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String stage,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) BigDecimal minLotSize,
             @RequestParam(required = false) BigDecimal maxLotSize,
             @RequestParam(required = false) Boolean isFeatured,
             @RequestParam(required = false) Boolean isHotDeal,
-            @RequestParam(required = false) ProjectType projectType,
-            @RequestParam(required = false) BuildingType buildingType,
-            @RequestParam(required = false) ZoningType zoningType,
-            @RequestParam(required = false) ListingType listingType,
+            @RequestParam(required = false) String projectType,
+            @RequestParam(required = false) String buildingType,
+            @RequestParam(required = false) String zoningType,
+            @RequestParam(required = false) String listingType,
             @RequestParam(required = false) Integer forSaleSince,
             @RequestParam(required = false) String sortBy,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
+
+        String location = (city != null && !city.isBlank()) ? city : q;
+        ProjectStage parsedStage = parseEnumToken(ProjectStage.class, stage, "stage");
+        ProjectType parsedProjectType = parseEnumToken(ProjectType.class, projectType, "projectType");
+        BuildingType parsedBuildingType = parseEnumToken(BuildingType.class, buildingType, "buildingType");
+        ZoningType parsedZoningType = parseEnumToken(ZoningType.class, zoningType, "zoningType");
+        ListingType parsedListingType = parseEnumToken(ListingType.class, listingType, "listingType");
+
         PageResponse<LandResponse> lands = landService.filterLands(
-                city, stage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
-                projectType != null ? projectType.name() : null,
-                buildingType != null ? buildingType.name() : null,
-                zoningType != null ? zoningType.name() : null,
-                listingType != null ? listingType.name() : null,
+                location, parsedStage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
+                parsedProjectType != null ? parsedProjectType.name() : null,
+                parsedBuildingType != null ? parsedBuildingType.name() : null,
+                parsedZoningType != null ? parsedZoningType.name() : null,
+                parsedListingType != null ? parsedListingType.name() : null,
                 forSaleSince, sortBy,
                 page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
+    }
+
+    private <E extends Enum<E>> E parseEnumToken(Class<E> enumType, String rawValue, String fieldName) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return null;
+        }
+        String normalized = rawValue.trim().replace(' ', '_').replace('-', '_').toUpperCase();
+        try {
+            return Enum.valueOf(enumType, normalized);
+        } catch (IllegalArgumentException ex) {
+            throw new com.landgo.coreservice.exception.BadRequestException(
+                    "Invalid " + fieldName + " value: " + rawValue,
+                    "VALIDATION_ERROR");
+        }
     }
 
     @GetMapping("/mine")
