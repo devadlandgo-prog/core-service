@@ -135,7 +135,7 @@ public class LandSpecification {
     public static Specification<Land> hasListingType(String listingType) {
         return (root, query, cb) -> {
             if (listingType == null || listingType.trim().isEmpty()) return cb.conjunction();
-            return cb.equal(cb.function("jsonb_extract_path_text", String.class, root.get("projectSpecification"), cb.literal("sellingType")), listingType);
+            return cb.equal(cb.function("jsonb_extract_path_text", String.class, root.get("projectSpecification"), cb.literal("listingType")), listingType);
         };
     }
 
