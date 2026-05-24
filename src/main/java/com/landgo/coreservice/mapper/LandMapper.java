@@ -61,6 +61,8 @@ public class LandMapper {
         land.setOwnershipVerification(request.getOwnershipVerification());
         land.setPersonalUserId(request.getPersonalUserId());
         land.setAgentManagement(request.getAgentManagement() != null ? request.getAgentManagement() : false);
+        land.setFeatured(request.getFeatured() != null ? request.getFeatured() : false);
+        land.setHotDeal(request.getHotDeal() != null ? request.getHotDeal() : false);
         land.setViewCount(0); land.setInquiryCount(0);
         LandCreateRequest.ProjectDetailsDto details = request.getProjectDetails();
         if (details == null && request.getAddress() != null) {
@@ -139,6 +141,12 @@ public class LandMapper {
         land.setPersonalUserId(request.getPersonalUserId());
         if (request.getAgentManagement() != null) {
             land.setAgentManagement(request.getAgentManagement());
+        }
+        if (request.getFeatured() != null) {
+            land.setFeatured(request.getFeatured());
+        }
+        if (request.getHotDeal() != null) {
+            land.setHotDeal(request.getHotDeal());
         }
     }
 }

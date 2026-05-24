@@ -56,7 +56,6 @@ public class LandService {
         Land land = landMapper.toEntity(request);
         land.setVendorId(vendorId);
         land.setStatus(LandStatus.PENDING_APPROVAL);
-        land.setFeatured(false);
         land.setViewCount(0);
         land.setInquiryCount(0);
         Land saved = landRepository.save(land);

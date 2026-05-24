@@ -28,6 +28,12 @@ public class LandCreateRequest {
     
     @Schema(example = "false")
     private Boolean agentManagement;
+
+    @Schema(example = "false")
+    private Boolean featured;
+
+    @Schema(example = "false")
+    private Boolean hotDeal;
     
     private Boolean isAdmin;
 
