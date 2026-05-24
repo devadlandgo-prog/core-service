@@ -32,7 +32,7 @@ public class ReviewService {
 
     @Transactional
     public ReviewResponse createReview(UUID authorId, UUID professionalId, CreateReviewRequest request) {
-        if (reviewRepository.existsByAuthorIdAndProfessionalId(authorId, professionalId)) {
+        if (reviewRepository.existsByAuthorIdAndProfessionalIdAndDeletedFalse(authorId, professionalId)) {
             throw new ConflictException("You have already reviewed this professional", "DUPLICATE_REVIEW");
         }
 

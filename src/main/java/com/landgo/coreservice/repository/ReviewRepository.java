@@ -14,8 +14,9 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     
     @Query("SELECT r FROM Review r WHERE r.professionalId = :professionalId AND r.deleted = false ORDER BY r.createdAt DESC")
     Page<Review> findByProfessionalId(@Param("professionalId") UUID professionalId, Pageable pageable);
-    
-    boolean existsByAuthorIdAndProfessionalId(UUID authorId, UUID professionalId);
+
+    @Query("SELECT COUNT(r) > 0 FROM Review r WHERE r.authorId = :authorId AND r.professionalId = :professionalId AND r.deleted = false")
+    boolean existsByAuthorIdAndProfessionalIdAndDeletedFalse(@Param("authorId") UUID authorId, @Param("professionalId") UUID professionalId);
     
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.professionalId = :professionalId AND r.deleted = false")
     Double getAverageRatingByProfessionalId(@Param("professionalId") UUID professionalId);
