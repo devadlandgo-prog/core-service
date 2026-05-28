@@ -121,21 +121,33 @@ public class LandSpecification {
     public static Specification<Land> hasProjectType(String projectType) {
         return (root, query, cb) -> {
             if (projectType == null || projectType.trim().isEmpty()) return cb.conjunction();
-            return cb.equal(cb.function("jsonb_extract_path_text", String.class, root.get("projectSpecification"), cb.literal("projectType")), projectType);
+            String normalized = projectType.trim().toLowerCase();
+            return cb.equal(
+                    cb.lower(cb.function("jsonb_extract_path_text", String.class,
+                            root.get("projectSpecification"), cb.literal("projectType"))),
+                    normalized);
         };
     }
 
     public static Specification<Land> hasBuildingType(String buildingType) {
         return (root, query, cb) -> {
             if (buildingType == null || buildingType.trim().isEmpty()) return cb.conjunction();
-            return cb.equal(cb.function("jsonb_extract_path_text", String.class, root.get("projectSpecification"), cb.literal("buildingType")), buildingType);
+            String normalized = buildingType.trim().toLowerCase();
+            return cb.equal(
+                    cb.lower(cb.function("jsonb_extract_path_text", String.class,
+                            root.get("projectSpecification"), cb.literal("buildingType"))),
+                    normalized);
         };
     }
 
     public static Specification<Land> hasListingType(String listingType) {
         return (root, query, cb) -> {
             if (listingType == null || listingType.trim().isEmpty()) return cb.conjunction();
-            return cb.equal(cb.function("jsonb_extract_path_text", String.class, root.get("projectSpecification"), cb.literal("listingType")), listingType);
+            String normalized = listingType.trim().toLowerCase();
+            return cb.equal(
+                    cb.lower(cb.function("jsonb_extract_path_text", String.class,
+                            root.get("projectSpecification"), cb.literal("listingType"))),
+                    normalized);
         };
     }
 

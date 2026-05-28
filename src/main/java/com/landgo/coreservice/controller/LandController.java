@@ -157,7 +157,6 @@ public class LandController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        String location = (city != null && !city.isBlank()) ? city : q;
         ProjectStage parsedStage = parseEnumToken(ProjectStage.class, stage, "stage");
         ProjectType parsedProjectType = parseEnumToken(ProjectType.class, projectType, "projectType");
         BuildingType parsedBuildingType = parseEnumToken(BuildingType.class, buildingType, "buildingType");
@@ -165,7 +164,7 @@ public class LandController {
         ListingType parsedListingType = parseEnumToken(ListingType.class, listingType, "listingType");
 
         PageResponse<LandResponse> lands = landService.filterLands(
-                location, parsedStage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
+                city, q, parsedStage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
                 parsedProjectType != null ? parsedProjectType.name() : null,
                 parsedBuildingType != null ? parsedBuildingType.name() : null,
                 parsedZoningType != null ? parsedZoningType.name() : null,

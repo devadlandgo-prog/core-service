@@ -97,7 +97,7 @@ public class LandService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<LandResponse> filterLands(String city, ProjectStage stage, BigDecimal minPrice, BigDecimal maxPrice, 
+    public PageResponse<LandResponse> filterLands(String city, String q, ProjectStage stage, BigDecimal minPrice, BigDecimal maxPrice, 
                                                BigDecimal minLotSize, BigDecimal maxLotSize, Boolean isFeatured, Boolean isHotDeal,
                                                String projectType, String buildingType, String zoningType, String listingType, Integer forSaleSince,
                                                String sortBy,
@@ -118,6 +118,7 @@ public class LandService {
                 .and(LandSpecification.isNotDeleted());
 
         if (city != null && !city.isBlank()) spec = spec.and(LandSpecification.hasCity(city));
+        if (q != null && !q.isBlank()) spec = spec.and(LandSpecification.hasKeyword(q));
         if (stage != null) spec = spec.and(LandSpecification.hasProjectStage(stage));
         if (minPrice != null) spec = spec.and(LandSpecification.hasMinPrice(minPrice));
         if (maxPrice != null) spec = spec.and(LandSpecification.hasMaxPrice(maxPrice));
