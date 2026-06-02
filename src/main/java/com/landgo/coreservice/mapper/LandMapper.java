@@ -4,13 +4,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.landgo.coreservice.dto.request.LandCreateRequest;
 import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.entity.Land;
+import com.landgo.coreservice.service.ImageStorageService;
+import com.landgo.coreservice.dto.response.PresignedUrlResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class LandMapper {
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ImageStorageService imageStorageService;
 
     public LandResponse toResponse(Land land) {
         if (land == null) return null;
@@ -31,7 +36,7 @@ public class LandMapper {
                 .projectSpecification(land.getProjectSpecification())
                 .askingPrice(land.getAskingPrice()).currency(land.getCurrency())
                 .pricingDescription(land.getPricingDescription())
-                .photos(land.getPhotos()).documents(land.getDocuments())
+                .photos(signMediaUrls(land.getPhotos())).documents(signMediaUrls(land.getDocuments()))
                 .ownershipVerification(land.getOwnershipVerification())
                 .viewCount(land.getViewCount()).inquiryCount(land.getInquiryCount())
                 .isFeatured(land.isFeatured()).isHotDeal(land.isHotDeal())
@@ -148,5 +153,26 @@ public class LandMapper {
         if (request.getHotDeal() != null) {
             land.setHotDeal(request.getHotDeal());
         }
+    }
+
+    private List<Map<String, String>> signMediaUrls(List<Map<String, String>> mediaList) {
+        if (mediaList == null) return null;
+        
+        List<Map<String, String>> signedList = new ArrayList<>();
+        for (Map<String, String> media : mediaList) {
+            Map<String, String> copy = new LinkedHashMap<>(media);
+            String fileKey = copy.get("fileKey");
+            if (fileKey != null && !fileKey.isBlank()) {
+                try {
+                    // Generate a 60-minute pre-signed read URL on the fly
+                    PresignedUrlResponse presigned = imageStorageService.generatePresignedReadUrl(fileKey, 60);
+                    copy.put("url", presigned.getUrl());
+                } catch (Exception e) {
+                    // Fallback to original static URL if signing fails
+                }
+            }
+            signedList.add(copy);
+        }
+        return signedList;
     }
 }
