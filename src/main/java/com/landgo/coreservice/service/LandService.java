@@ -90,7 +90,7 @@ public class LandService {
     public PageResponse<LandResponse> searchLands(String query, int page, int size, UUID userId) {
         Pageable pageable = PageRequest.of(page, size);
         Specification<Land> spec = LandSpecification.searchLands(query)
-                .and(LandSpecification.hasStatus("ACTIVE"))
+                .and(LandSpecification.hasStatus(LandStatus.ACTIVE))
                 .and(LandSpecification.isNotDeleted());
         Page<Land> lands = landRepository.findAll(spec, pageable);
         return getPageResponse(lands, userId);
@@ -114,7 +114,7 @@ public class LandService {
         
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        Specification<Land> spec = Specification.where(LandSpecification.hasStatus("ACTIVE"))
+        Specification<Land> spec = Specification.where(LandSpecification.hasStatus(LandStatus.ACTIVE))
                 .and(LandSpecification.isNotDeleted());
 
         if (city != null && !city.isBlank()) spec = spec.and(LandSpecification.hasCity(city));

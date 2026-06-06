@@ -162,6 +162,19 @@ public class LandMapper {
         for (Map<String, String> media : mediaList) {
             Map<String, String> copy = new LinkedHashMap<>(media);
             String fileKey = copy.get("fileKey");
+            if (fileKey == null || fileKey.isBlank()) {
+                String url = copy.get("url");
+                if (url != null && !url.isBlank()) {
+                    int idx = url.indexOf("uploads/");
+                    if (idx != -1) {
+                        fileKey = url.substring(idx);
+                        copy.put("fileKey", fileKey);
+                    } else if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                        fileKey = url;
+                        copy.put("fileKey", fileKey);
+                    }
+                }
+            }
             if (fileKey != null && !fileKey.isBlank()) {
                 try {
                     // Generate a 60-minute pre-signed read URL on the fly

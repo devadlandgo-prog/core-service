@@ -14,3 +14,10 @@ databaseChangeLog:
         - sqlFile:
             path: ../ddl/003_add_agent_management_to_lands.sql
             relativeToChangelogFile: true
+  - changeSet:
+      id: 20260606-adjust-reviews-unique-constraint
+      author: antigravity
+      changes:
+        - sqlFile:
+            path: ../ddl/004_adjust_reviews_unique_constraint.sql
+            relativeToChangelogFile: true

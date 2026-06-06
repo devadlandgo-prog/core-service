@@ -26,6 +26,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/listings/**", "/professionals/**", "/locations/**", "/filter-options").permitAll()
                 .requestMatchers(HttpMethod.POST, "/listings/{id}/view").permitAll()
                 .anyRequest().authenticated())
+            .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+                response.setContentType("application/json");
+                response.setStatus(401);
+                response.getWriter().write("{\"success\":false,\"message\":\"" + authException.getMessage() + "\",\"code\":\"UNAUTHORIZED\"}");
+            }))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

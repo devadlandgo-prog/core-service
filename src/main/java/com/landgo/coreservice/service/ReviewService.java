@@ -29,6 +29,7 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final UserServiceClient userServiceClient;
+    private final ImageStorageService imageStorageService;
 
     @Transactional
     public ReviewResponse createReview(UUID authorId, UUID professionalId, CreateReviewRequest request) {
@@ -92,6 +93,24 @@ public class ReviewService {
         // Initialize lazy collections before session closes
         review.getTags().size();
         review.getPhotos().size();
+
+        List<String> signedPhotos = null;
+        if (review.getPhotos() != null) {
+            signedPhotos = review.getPhotos().stream().map(photo -> {
+                if (photo == null || photo.isBlank()) return photo;
+                try {
+                    String fileKey = photo;
+                    int idx = photo.indexOf("uploads/");
+                    if (idx != -1) {
+                        fileKey = photo.substring(idx);
+                    }
+                    return imageStorageService.generatePresignedReadUrl(fileKey, 60).getUrl();
+                } catch (Exception e) {
+                    return photo;
+                }
+            }).collect(Collectors.toList());
+        }
+
         return ReviewResponse.builder()
                 .id(review.getId())
                 .professionalId(review.getProfessionalId())
@@ -102,7 +121,7 @@ public class ReviewService {
                 .title(review.getTitle())
                 .content(review.getContent())
                 .tags(review.getTags())
-                .photos(review.getPhotos())
+                .photos(signedPhotos)
                 .verifiedPurchase(review.isVerifiedPurchase())
                 .createdAt(review.getCreatedAt())
                 .build();

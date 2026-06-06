@@ -2,6 +2,7 @@ package com.landgo.coreservice.repository;
 
 import com.landgo.coreservice.entity.Land;
 import com.landgo.coreservice.enums.ProjectStage;
+import com.landgo.coreservice.enums.LandStatus;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -25,7 +26,7 @@ public class LandSpecification {
         };
     }
 
-    public static Specification<Land> hasStatus(String status) {
+    public static Specification<Land> hasStatus(LandStatus status) {
         return (root, query, cb) -> cb.equal(root.get("status"), status);
     }
 
@@ -174,7 +175,7 @@ public class LandSpecification {
                                                          BigDecimal minLotSize, BigDecimal maxLotSize) {
         return (root, query, cb) -> {
             Predicate predicate = cb.conjunction();
-            predicate = cb.and(predicate, cb.equal(root.get("status"), "ACTIVE"));
+            predicate = cb.and(predicate, cb.equal(root.get("status"), LandStatus.ACTIVE));
             predicate = cb.and(predicate, cb.equal(root.get("deleted"), false));
 
             if (keyword != null && !keyword.trim().isEmpty()) {
