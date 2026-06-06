@@ -132,11 +132,22 @@ public class LandCreateRequest {
         @Schema(example = "Approved")
         private String sitePlanStatus;
         
-        private String subdivisionType; private String lotBlockType; private String draftPlanStatus;
-        @Valid private ServicesDto services;
-        @Valid private ProposedDevelopmentTypeDto proposedDevelopmentType;
-        private String submissionStatus; private String projectType; private String sellingType; private String listingType;
-        private String constructionStartTimeline; private String approvalStatus;
+        private String subdivisionType; 
+        private String lotBlockType; 
+        private String draftPlanStatus;
+        
+        @Valid 
+        private ServicesDto services;
+        
+        @Valid 
+        private ProposedDevelopmentTypeDto proposedDevelopmentType;
+        
+        private String submissionStatus; 
+        private String projectType; 
+        private String sellingType; 
+        private String listingType;
+        private String constructionStartTimeline; 
+        private String approvalStatus;
     }
     
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
