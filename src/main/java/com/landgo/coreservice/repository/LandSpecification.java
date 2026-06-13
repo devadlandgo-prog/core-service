@@ -42,7 +42,9 @@ public class LandSpecification {
             String keywordPattern = "%" + keyword.toLowerCase() + "%";
             return cb.or(
                 cb.like(cb.lower(root.get("address")), keywordPattern),
-                cb.like(cb.lower(root.get("city")), keywordPattern)
+                cb.like(cb.lower(root.get("city")), keywordPattern),
+                cb.like(cb.lower(cb.function("jsonb_extract_path_text", String.class,
+                        root.get("projectSpecification"), cb.literal("title"))), keywordPattern)
             );
         };
     }
@@ -52,11 +54,7 @@ public class LandSpecification {
             if (city == null || city.trim().isEmpty()) {
                 return cb.conjunction();
             }
-            String cityPattern = "%" + city.trim().toLowerCase() + "%";
-            return cb.or(
-                    cb.like(cb.lower(root.get("city")), cityPattern),
-                    cb.like(cb.lower(root.get("address")), cityPattern)
-            );
+            return cb.equal(cb.lower(root.get("city")), city.trim().toLowerCase());
         };
     }
 
@@ -122,10 +120,14 @@ public class LandSpecification {
     public static Specification<Land> hasProjectType(String projectType) {
         return (root, query, cb) -> {
             if (projectType == null || projectType.trim().isEmpty()) return cb.conjunction();
-            String normalized = projectType.trim().toLowerCase();
+            String normalized = projectType.trim().toLowerCase().replace(" ", "_").replace("-", "_");
             return cb.equal(
-                    cb.lower(cb.function("jsonb_extract_path_text", String.class,
-                            root.get("projectSpecification"), cb.literal("projectType"))),
+                    cb.lower(cb.function("replace", String.class,
+                            cb.function("replace", String.class,
+                                    cb.function("jsonb_extract_path_text", String.class,
+                                            root.get("projectSpecification"), cb.literal("projectType")),
+                                    cb.literal(" "), cb.literal("_")),
+                            cb.literal("-"), cb.literal("_"))),
                     normalized);
         };
     }
@@ -133,10 +135,14 @@ public class LandSpecification {
     public static Specification<Land> hasBuildingType(String buildingType) {
         return (root, query, cb) -> {
             if (buildingType == null || buildingType.trim().isEmpty()) return cb.conjunction();
-            String normalized = buildingType.trim().toLowerCase();
+            String normalized = buildingType.trim().toLowerCase().replace(" ", "_").replace("-", "_");
             return cb.equal(
-                    cb.lower(cb.function("jsonb_extract_path_text", String.class,
-                            root.get("projectSpecification"), cb.literal("buildingType"))),
+                    cb.lower(cb.function("replace", String.class,
+                            cb.function("replace", String.class,
+                                    cb.function("jsonb_extract_path_text", String.class,
+                                            root.get("projectSpecification"), cb.literal("buildingType")),
+                                    cb.literal(" "), cb.literal("_")),
+                            cb.literal("-"), cb.literal("_"))),
                     normalized);
         };
     }
@@ -144,10 +150,14 @@ public class LandSpecification {
     public static Specification<Land> hasListingType(String listingType) {
         return (root, query, cb) -> {
             if (listingType == null || listingType.trim().isEmpty()) return cb.conjunction();
-            String normalized = listingType.trim().toLowerCase();
+            String normalized = listingType.trim().toLowerCase().replace(" ", "_").replace("-", "_");
             return cb.equal(
-                    cb.lower(cb.function("jsonb_extract_path_text", String.class,
-                            root.get("projectSpecification"), cb.literal("listingType"))),
+                    cb.lower(cb.function("replace", String.class,
+                            cb.function("replace", String.class,
+                                    cb.function("jsonb_extract_path_text", String.class,
+                                            root.get("projectSpecification"), cb.literal("listingType")),
+                                    cb.literal(" "), cb.literal("_")),
+                            cb.literal("-"), cb.literal("_"))),
                     normalized);
         };
     }

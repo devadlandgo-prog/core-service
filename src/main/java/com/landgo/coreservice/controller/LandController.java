@@ -154,6 +154,7 @@ public class LandController {
             @RequestParam(required = false) String listingType,
             @RequestParam(required = false) Integer forSaleSince,
             @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDir,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
@@ -169,7 +170,7 @@ public class LandController {
                 parsedBuildingType != null ? parsedBuildingType.name() : null,
                 parsedZoningType != null ? parsedZoningType.name() : null,
                 parsedListingType != null ? parsedListingType.name() : null,
-                forSaleSince, sortBy,
+                forSaleSince, sortBy, sortDir,
                 page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }

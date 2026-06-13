@@ -100,19 +100,36 @@ public class LandService {
     public PageResponse<LandResponse> filterLands(String city, String q, ProjectStage stage, BigDecimal minPrice, BigDecimal maxPrice, 
                                                BigDecimal minLotSize, BigDecimal maxLotSize, Boolean isFeatured, Boolean isHotDeal,
                                                String projectType, String buildingType, String zoningType, String listingType, Integer forSaleSince,
-                                               String sortBy,
+                                               String sortBy, String sortDir,
                                                int page, int size, UUID userId) {
         
-        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
-        if (sortBy != null) {
-            switch (sortBy.toLowerCase()) {
-                case "price_asc" -> sort = Sort.by(Sort.Direction.ASC, "askingPrice");
-                case "price_desc" -> sort = Sort.by(Sort.Direction.DESC, "askingPrice");
-                case "newest" -> sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        Sort.Direction direction = Sort.Direction.DESC;
+        if (sortDir != null) {
+            if (sortDir.equalsIgnoreCase("asc")) {
+                direction = Sort.Direction.ASC;
+            } else if (sortDir.equalsIgnoreCase("desc")) {
+                direction = Sort.Direction.DESC;
             }
         }
         
-        Pageable pageable = PageRequest.of(page, size, sort);
+        String sortProperty = "createdAt";
+        if (sortBy != null) {
+            switch (sortBy.toLowerCase()) {
+                case "price", "price_asc", "price_desc" -> {
+                    sortProperty = "askingPrice";
+                    if (sortBy.equalsIgnoreCase("price_asc")) direction = Sort.Direction.ASC;
+                    else if (sortBy.equalsIgnoreCase("price_desc")) direction = Sort.Direction.DESC;
+                }
+                case "area", "lotsize" -> sortProperty = "lotSize";
+                case "createdat", "newest", "oldest" -> {
+                    sortProperty = "createdAt";
+                    if (sortBy.equalsIgnoreCase("newest")) direction = Sort.Direction.DESC;
+                    else if (sortBy.equalsIgnoreCase("oldest")) direction = Sort.Direction.ASC;
+                }
+            }
+        }
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortProperty));
         
         Specification<Land> spec = Specification.where(LandSpecification.hasStatus(LandStatus.ACTIVE))
                 .and(LandSpecification.isNotDeleted());
@@ -157,11 +174,24 @@ public class LandService {
             
             enrichWithVendors(allResponses);
 
+            Comparator<BigDecimal> ratingComp = sortDir != null && sortDir.equalsIgnoreCase("asc") 
+                    ? Comparator.nullsLast(Comparator.naturalOrder()) 
+                    : Comparator.nullsLast(Comparator.reverseOrder());
+            Comparator<Integer> reviewsComp = sortDir != null && sortDir.equalsIgnoreCase("asc") 
+                    ? Comparator.nullsLast(Comparator.naturalOrder()) 
+                    : Comparator.nullsLast(Comparator.reverseOrder());
+            Comparator<Integer> experienceComp = sortDir != null && sortDir.equalsIgnoreCase("asc") 
+                    ? Comparator.nullsLast(Comparator.naturalOrder()) 
+                    : Comparator.nullsLast(Comparator.reverseOrder());
+            Comparator<java.time.LocalDateTime> dateComp = sortDir != null && sortDir.equalsIgnoreCase("asc")
+                    ? Comparator.nullsLast(Comparator.naturalOrder())
+                    : Comparator.nullsLast(Comparator.reverseOrder());
+
             Comparator<LandResponse> comparator = switch (sortBy.toLowerCase()) {
-                case "rating" -> Comparator.comparing(LandResponse::getVendorRating, Comparator.nullsLast(Comparator.reverseOrder()));
-                case "reviews", "most_reviews" -> Comparator.comparing(LandResponse::getVendorTotalReviews, Comparator.nullsLast(Comparator.reverseOrder()));
-                case "experience", "most_experience" -> Comparator.comparing(LandResponse::getVendorYearsOfExperience, Comparator.nullsLast(Comparator.reverseOrder()));
-                default -> Comparator.comparing(LandResponse::getCreatedAt).reversed();
+                case "rating" -> Comparator.comparing(LandResponse::getVendorRating, ratingComp);
+                case "reviews", "most_reviews" -> Comparator.comparing(LandResponse::getVendorTotalReviews, reviewsComp);
+                case "experience", "most_experience" -> Comparator.comparing(LandResponse::getVendorYearsOfExperience, experienceComp);
+                default -> Comparator.comparing(LandResponse::getCreatedAt, dateComp);
             };
             allResponses.sort(comparator);
 

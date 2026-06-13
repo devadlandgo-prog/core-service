@@ -180,6 +180,7 @@ public class LandMapper {
                     // Generate a 60-minute pre-signed read URL on the fly
                     PresignedUrlResponse presigned = imageStorageService.generatePresignedReadUrl(fileKey, 60);
                     copy.put("url", presigned.getUrl());
+                    copy.put("imageUrl", presigned.getUrl());
                 } catch (Exception e) {
                     // Fallback to original static URL if signing fails
                 }
