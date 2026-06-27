@@ -257,11 +257,13 @@ public class LandController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<LandResponse>> updateLandStatus(
+            @CurrentUser UUID userId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal UserPrincipal principal,
             @PathVariable UUID id,
             @RequestParam LandStatus status) {
-        LandResponse land = landService.updateLandStatus(id, status);
+        boolean isAdmin = principal != null && principal.getRole() == com.landgo.coreservice.enums.Role.ADMIN;
+        LandResponse land = landService.updateLandStatus(id, status, userId, isAdmin);
         return ResponseEntity.ok(ApiResponse.success("Land status updated", land));
     }
 

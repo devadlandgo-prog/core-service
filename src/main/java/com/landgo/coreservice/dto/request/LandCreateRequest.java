@@ -37,6 +37,9 @@ public class LandCreateRequest {
     
     private Boolean isAdmin;
 
+    @Schema(example = "+14165550100", description = "MLS listing contact mobile number")
+    private String mlsMobileNumber;
+
     // Flat payload compatibility fields (DOCX contract style)
     @Schema(example = "Prime Development Land in Toronto")
     private String title;

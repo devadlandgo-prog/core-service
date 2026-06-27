@@ -27,9 +27,23 @@ import java.util.stream.Collectors;
 public class ListingDraftService {
 
     private final ListingDraftRepository draftRepository;
+    private final UserServiceClient userServiceClient;
+    private final com.landgo.coreservice.repository.LandRepository landRepository;
 
     @Transactional
     public DraftResponse createDraft(UUID userId) {
+        // Enforce listing limit (cap)
+        Integer maxListings = userServiceClient.getUserMaxListings(userId);
+        if (maxListings != null) {
+            long currentListingCount = landRepository.countAllByVendorIdAndDeletedFalse(userId);
+            long currentDraftCount = draftRepository.countByOwnerIdAndStatusAndDeletedFalse(userId, DraftStatus.IN_PROGRESS);
+            if (currentListingCount + currentDraftCount >= maxListings) {
+                throw new com.landgo.coreservice.exception.ForbiddenException(
+                    String.format("You have reached your maximum listing limit of %d. Please upgrade your subscription to create more drafts.", maxListings)
+                );
+            }
+        }
+
         ListingDraft draft = ListingDraft.builder()
                 .ownerId(userId)
                 .status(DraftStatus.IN_PROGRESS)

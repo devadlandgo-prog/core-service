@@ -127,6 +127,9 @@ public class LandResponse {
     @Schema(example = "false")
     private boolean isFavorited;
 
+    @Schema(example = "+14165550100", description = "MLS listing contact mobile number")
+    private String mlsMobileNumber;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

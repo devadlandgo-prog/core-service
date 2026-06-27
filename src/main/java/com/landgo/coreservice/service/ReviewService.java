@@ -4,6 +4,7 @@ import com.landgo.coreservice.dto.request.CreateReviewRequest;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.dto.response.ReviewResponse;
 import com.landgo.coreservice.dto.response.UserResponse;
+import com.landgo.coreservice.dto.response.VendorResponse;
 import com.landgo.coreservice.entity.Review;
 import com.landgo.coreservice.exception.BadRequestException;
 import com.landgo.coreservice.exception.ConflictException;
@@ -37,19 +38,34 @@ public class ReviewService {
             throw new ConflictException("You have already reviewed this professional", "DUPLICATE_REVIEW");
         }
 
-        // Verify professional exists in user-service
+        // Verify professional exists in user-service — professionalId may be either a userId or a vendorId
         UserResponse professional = userServiceClient.getUserById(professionalId);
         if (professional == null) {
-            throw new ResourceNotFoundException("Professional", "id", professionalId);
+            // Fallback: try resolving as a vendorId (the user-service /internal/users/{id} may not find vendor records by vendor profile id)
+            VendorResponse vendor = userServiceClient.getVendorProfileForUser(professionalId);
+            if (vendor != null && vendor.getUserId() != null) {
+                // Remap professionalId to the canonical userId
+                professionalId = vendor.getUserId();
+                professional = userServiceClient.getUserById(professionalId);
+            }
+            if (professional == null) {
+                throw new ResourceNotFoundException("Professional", "id", professionalId);
+            }
         }
 
-        if (professionalId.equals(authorId)) {
+        // Use the resolved professionalId for the duplicate check too
+        final UUID resolvedProfessionalId = professionalId;
+        if (reviewRepository.existsByAuthorIdAndProfessionalIdAndDeletedFalse(authorId, resolvedProfessionalId)) {
+            throw new ConflictException("You have already reviewed this professional", "DUPLICATE_REVIEW");
+        }
+
+        if (resolvedProfessionalId.equals(authorId)) {
             throw new BadRequestException("You cannot review yourself");
         }
 
         Review review = Review.builder()
                 .authorId(authorId)
-                .professionalId(professionalId)
+                .professionalId(resolvedProfessionalId)
                 .rating(request.getRating())
                 .title(request.getTitle())
                 .content(request.getContent())
@@ -59,7 +75,7 @@ public class ReviewService {
                 .build();
 
         Review saved = reviewRepository.save(review);
-        log.info("Review created by {} for professional {}", authorId, professionalId);
+        log.info("Review created by {} for professional {}", authorId, resolvedProfessionalId);
         return toResponse(saved);
     }
 

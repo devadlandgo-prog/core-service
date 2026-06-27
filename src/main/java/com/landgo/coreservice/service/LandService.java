@@ -37,6 +37,7 @@ public class LandService {
     private final FavoriteListingRepository favoriteRepository;
     private final UserServiceClient userServiceClient;
     private final LandMapper landMapper;
+    private final com.landgo.coreservice.repository.ListingDraftRepository draftRepository;
 
     @Transactional
     public LandResponse createLand(LandCreateRequest request, UUID vendorId) {
@@ -46,7 +47,8 @@ public class LandService {
         Integer maxListings = userServiceClient.getUserMaxListings(vendorId);
         if (maxListings != null) {
             long currentListingCount = landRepository.countAllByVendorIdAndDeletedFalse(vendorId);
-            if (currentListingCount >= maxListings) {
+            long currentDraftCount = draftRepository.countByOwnerIdAndStatusAndDeletedFalse(vendorId, com.landgo.coreservice.enums.DraftStatus.IN_PROGRESS);
+            if (currentListingCount + currentDraftCount >= maxListings) {
                 throw new com.landgo.coreservice.exception.BadRequestException(
                     String.format("You have reached your maximum listing limit of %d. Please upgrade your subscription to post more listings.", maxListings)
                 );
@@ -255,12 +257,22 @@ public class LandService {
     }
 
     @Transactional
-    public LandResponse updateLandStatus(UUID id, LandStatus status) {
+    public LandResponse updateLandStatus(UUID id, LandStatus status, UUID userId, boolean isAdmin) {
         Land land = landRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
+        
+        if (!isAdmin) {
+            if (status != LandStatus.SOLD) {
+                throw new ForbiddenException("Only admins can change status to " + status);
+            }
+            if (!land.getVendorId().equals(userId)) {
+                throw new ForbiddenException("You are not authorized to update this listing's status");
+            }
+        }
+        
         land.setStatus(status);
         Land saved = landRepository.save(land);
-        return getLandResponseWithFavorite(saved, null);
+        return getLandResponseWithFavorite(saved, userId);
     }
 
     @Transactional
@@ -512,5 +524,22 @@ public class LandService {
                 .content(content).number(lands.getNumber()).size(lands.getSize())
                 .totalElements(lands.getTotalElements()).totalPages(lands.getTotalPages())
                 .first(lands.isFirst()).last(lands.isLast()).build();
+    }
+
+    public Map<String, Object> getSlotUsage(UUID userId) {
+        long draft = draftRepository.countByOwnerIdAndStatusAndDeletedFalse(userId, com.landgo.coreservice.enums.DraftStatus.IN_PROGRESS);
+        long pending = landRepository.countByVendorIdAndStatusAndDeletedFalse(userId, LandStatus.PENDING_APPROVAL);
+        long live = landRepository.countActiveListingsByVendorId(userId);
+        long total = landRepository.countAllByVendorIdAndDeletedFalse(userId) + draft;
+        
+        Integer maxListings = userServiceClient.getUserMaxListings(userId);
+        
+        Map<String, Object> usage = new LinkedHashMap<>();
+        usage.put("draft", draft);
+        usage.put("pending", pending);
+        usage.put("live", live);
+        usage.put("total", total);
+        usage.put("maxListings", maxListings == null ? 0 : maxListings);
+        return usage;
     }
 }

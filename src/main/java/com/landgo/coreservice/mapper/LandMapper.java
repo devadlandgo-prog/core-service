@@ -42,6 +42,7 @@ public class LandMapper {
                 .isFeatured(land.isFeatured()).isHotDeal(land.isHotDeal())
                 .agentManagement(land.isAgentManagement())
                 .personalUserId(land.getPersonalUserId())
+                .mlsMobileNumber(land.getMlsMobileNumber())
                 .createdAt(land.getCreatedAt()).updatedAt(land.getUpdatedAt());
         
         if (land.getVendorId() != null) {
@@ -101,6 +102,7 @@ public class LandMapper {
         }
         if (request.getPhotos() != null) { land.setPhotos(request.getPhotos().stream().map(f -> { Map<String, String> m = new LinkedHashMap<>(); m.put("name", f.getName()); m.put("type", f.getType()); m.put("url", f.getUrl()); return m; }).collect(Collectors.toList())); }
         if (request.getDocuments() != null) { land.setDocuments(request.getDocuments().stream().map(f -> { Map<String, String> m = new LinkedHashMap<>(); m.put("name", f.getName()); m.put("type", f.getType()); m.put("url", f.getUrl()); return m; }).collect(Collectors.toList())); }
+        if (request.getMlsMobileNumber() != null) land.setMlsMobileNumber(request.getMlsMobileNumber());
         return land;
     }
 
@@ -152,6 +154,9 @@ public class LandMapper {
         }
         if (request.getHotDeal() != null) {
             land.setHotDeal(request.getHotDeal());
+        }
+        if (request.getMlsMobileNumber() != null) {
+            land.setMlsMobileNumber(request.getMlsMobileNumber());
         }
     }
 

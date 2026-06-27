@@ -57,5 +57,7 @@ public interface LandRepository extends JpaRepository<Land, UUID>, JpaSpecificat
     @Query("SELECT COUNT(l) FROM Land l WHERE l.vendorId = :vendorId AND l.deleted = false")
     long countAllByVendorIdAndDeletedFalse(@Param("vendorId") UUID vendorId);
 
+    long countByVendorIdAndStatusAndDeletedFalse(UUID vendorId, LandStatus status);
+
     long countByStatus(LandStatus status);
 }
