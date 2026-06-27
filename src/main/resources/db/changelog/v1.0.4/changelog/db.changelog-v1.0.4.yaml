@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260627-add-mls-mobile-number-column
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/005_add_mls_mobile_number.sql
+            relativeToChangelogFile: true
