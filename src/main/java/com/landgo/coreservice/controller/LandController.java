@@ -141,37 +141,33 @@ public class LandController {
             @CurrentUser UUID userId,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) String stage,
+            @RequestParam(required = false) List<String> stage,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) BigDecimal minLotSize,
             @RequestParam(required = false) BigDecimal maxLotSize,
             @RequestParam(required = false) Boolean isFeatured,
             @RequestParam(required = false) Boolean isHotDeal,
-            @RequestParam(required = false) String projectType,
-            @RequestParam(required = false) String buildingType,
-            @RequestParam(required = false) String zoningType,
-            @RequestParam(required = false) String listingType,
+            @RequestParam(required = false) List<String> projectType,
+            @RequestParam(required = false) List<String> buildingType,
+            @RequestParam(required = false) List<String> zoningType,
+            @RequestParam(required = false) List<String> listingType,
             @RequestParam(required = false) Integer forSaleSince,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDir,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        ProjectStage parsedStage = parseEnumToken(ProjectStage.class, stage, "stage");
-        ProjectType parsedProjectType = parseEnumToken(ProjectType.class, projectType, "projectType");
-        BuildingType parsedBuildingType = parseEnumToken(BuildingType.class, buildingType, "buildingType");
-        ZoningType parsedZoningType = parseEnumToken(ZoningType.class, zoningType, "zoningType");
-        ListingType parsedListingType = parseEnumToken(ListingType.class, listingType, "listingType");
+        List<ProjectStage> parsedStages = parseEnumList(ProjectStage.class, stage, "stage");
+        List<ProjectType> parsedProjectTypes = parseEnumList(ProjectType.class, projectType, "projectType");
+        List<BuildingType> parsedBuildingTypes = parseEnumList(BuildingType.class, buildingType, "buildingType");
+        List<ZoningType> parsedZoningTypes = parseEnumList(ZoningType.class, zoningType, "zoningType");
+        List<ListingType> parsedListingTypes = parseEnumList(ListingType.class, listingType, "listingType");
 
         PageResponse<LandResponse> lands = landService.filterLands(
-                city, q, parsedStage, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
-                parsedProjectType != null ? parsedProjectType.name() : null,
-                parsedBuildingType != null ? parsedBuildingType.name() : null,
-                parsedZoningType != null ? parsedZoningType.name() : null,
-                parsedListingType != null ? parsedListingType.name() : null,
-                forSaleSince, sortBy, sortDir,
-                page, size, userId);
+                city, q, parsedStages, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
+                parsedProjectTypes, parsedBuildingTypes, parsedZoningTypes, parsedListingTypes, forSaleSince,
+                sortBy, sortDir, page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
 
@@ -187,6 +183,15 @@ public class LandController {
                     "Invalid " + fieldName + " value: " + rawValue,
                     "VALIDATION_ERROR");
         }
+    }
+
+    private <E extends Enum<E>> List<E> parseEnumList(Class<E> enumType, List<String> rawValues, String fieldName) {
+        if (rawValues == null || rawValues.isEmpty()) {
+            return null;
+        }
+        return rawValues.stream()
+                .map(val -> parseEnumToken(enumType, val, fieldName))
+                .toList();
     }
 
     @GetMapping("/mine")

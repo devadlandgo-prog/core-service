@@ -2,6 +2,10 @@ package com.landgo.coreservice.repository;
 
 import com.landgo.coreservice.entity.Land;
 import com.landgo.coreservice.enums.ProjectStage;
+import com.landgo.coreservice.enums.ProjectType;
+import com.landgo.coreservice.enums.BuildingType;
+import com.landgo.coreservice.enums.ZoningType;
+import com.landgo.coreservice.enums.ListingType;
 import com.landgo.coreservice.enums.LandStatus;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -58,12 +62,12 @@ public class LandSpecification {
         };
     }
 
-    public static Specification<Land> hasProjectStage(ProjectStage stage) {
+    public static Specification<Land> hasProjectStages(java.util.List<ProjectStage> stages) {
         return (root, query, cb) -> {
-            if (stage == null) {
+            if (stages == null || stages.isEmpty()) {
                 return cb.conjunction();
             }
-            return cb.equal(root.get("projectStage"), stage);
+            return root.get("projectStage").in(stages);
         };
     }
 
@@ -117,58 +121,71 @@ public class LandSpecification {
         };
     }
 
-    public static Specification<Land> hasProjectType(String projectType) {
+    public static Specification<Land> hasProjectTypes(java.util.List<ProjectType> projectTypes) {
         return (root, query, cb) -> {
-            if (projectType == null || projectType.trim().isEmpty()) return cb.conjunction();
-            String normalized = projectType.trim().toLowerCase().replace(" ", "_").replace("-", "_");
-            return cb.equal(
+            if (projectTypes == null || projectTypes.isEmpty()) return cb.conjunction();
+            CriteriaBuilder.In<String> inClause = cb.in(
                     cb.lower(cb.function("replace", String.class,
                             cb.function("replace", String.class,
                                     cb.function("jsonb_extract_path_text", String.class,
                                             root.get("projectSpecification"), cb.literal("projectType")),
                                     cb.literal(" "), cb.literal("_")),
-                            cb.literal("-"), cb.literal("_"))),
-                    normalized);
+                            cb.literal("-"), cb.literal("_"))));
+            for (ProjectType pt : projectTypes) {
+                inClause.value(pt.name().toLowerCase());
+            }
+            return inClause;
         };
     }
 
-    public static Specification<Land> hasBuildingType(String buildingType) {
+    public static Specification<Land> hasBuildingTypes(java.util.List<BuildingType> buildingTypes) {
         return (root, query, cb) -> {
-            if (buildingType == null || buildingType.trim().isEmpty()) return cb.conjunction();
-            String normalized = buildingType.trim().toLowerCase().replace(" ", "_").replace("-", "_");
-            return cb.equal(
+            if (buildingTypes == null || buildingTypes.isEmpty()) return cb.conjunction();
+            CriteriaBuilder.In<String> inClause = cb.in(
                     cb.lower(cb.function("replace", String.class,
                             cb.function("replace", String.class,
                                     cb.function("jsonb_extract_path_text", String.class,
                                             root.get("projectSpecification"), cb.literal("buildingType")),
                                     cb.literal(" "), cb.literal("_")),
-                            cb.literal("-"), cb.literal("_"))),
-                    normalized);
+                            cb.literal("-"), cb.literal("_"))));
+            for (BuildingType bt : buildingTypes) {
+                inClause.value(bt.name().toLowerCase());
+            }
+            return inClause;
         };
     }
 
-    public static Specification<Land> hasListingType(String listingType) {
+    public static Specification<Land> hasListingTypes(java.util.List<ListingType> listingTypes) {
         return (root, query, cb) -> {
-            if (listingType == null || listingType.trim().isEmpty()) return cb.conjunction();
-            String normalized = listingType.trim().toLowerCase().replace(" ", "_").replace("-", "_");
-            return cb.equal(
+            if (listingTypes == null || listingTypes.isEmpty()) return cb.conjunction();
+            CriteriaBuilder.In<String> inClause = cb.in(
                     cb.lower(cb.function("replace", String.class,
                             cb.function("replace", String.class,
                                     cb.function("jsonb_extract_path_text", String.class,
                                             root.get("projectSpecification"), cb.literal("listingType")),
                                     cb.literal(" "), cb.literal("_")),
-                            cb.literal("-"), cb.literal("_"))),
-                    normalized);
+                            cb.literal("-"), cb.literal("_"))));
+            for (ListingType lt : listingTypes) {
+                inClause.value(lt.name().toLowerCase());
+            }
+            return inClause;
         };
     }
 
-    public static Specification<Land> hasZoningType(String zoningType) {
+    public static Specification<Land> hasZoningTypes(java.util.List<ZoningType> zoningTypes) {
         return (root, query, cb) -> {
-            if (zoningType == null || zoningType.trim().isEmpty()) return cb.conjunction();
-            return cb.or(
-                cb.like(cb.lower(root.get("currentZoningCodes")), "%" + zoningType.toLowerCase() + "%"),
-                cb.like(cb.lower(root.get("officialPlanDesignation")), "%" + zoningType.toLowerCase() + "%")
-            );
+            if (zoningTypes == null || zoningTypes.isEmpty()) return cb.conjunction();
+            
+            Predicate[] predicates = zoningTypes.stream().map(zt -> {
+                String searchStr = "%" + zt.name().toLowerCase() + "%";
+                return cb.or(
+                    cb.like(cb.lower(root.get("currentZoningCodes")), searchStr),
+                    cb.like(cb.lower(root.get("officialPlanDesignation")), searchStr)
+                );
+            }).toArray(Predicate[]::new);
+            
+            // Should match AT LEAST ONE of the provided zoning types (OR)
+            return cb.or(predicates);
         };
     }
 

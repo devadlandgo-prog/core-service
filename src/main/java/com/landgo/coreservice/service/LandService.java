@@ -8,6 +8,10 @@ import com.landgo.coreservice.entity.FavoriteListing;
 import com.landgo.coreservice.entity.Land;
 import com.landgo.coreservice.enums.LandStatus;
 import com.landgo.coreservice.enums.ProjectStage;
+import com.landgo.coreservice.enums.ProjectType;
+import com.landgo.coreservice.enums.BuildingType;
+import com.landgo.coreservice.enums.ZoningType;
+import com.landgo.coreservice.enums.ListingType;
 import com.landgo.coreservice.exception.ForbiddenException;
 import com.landgo.coreservice.exception.ResourceNotFoundException;
 import com.landgo.coreservice.mapper.LandMapper;
@@ -99,9 +103,9 @@ public class LandService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<LandResponse> filterLands(String city, String q, ProjectStage stage, BigDecimal minPrice, BigDecimal maxPrice, 
+    public PageResponse<LandResponse> filterLands(String city, String q, List<ProjectStage> stages, BigDecimal minPrice, BigDecimal maxPrice, 
                                                BigDecimal minLotSize, BigDecimal maxLotSize, Boolean isFeatured, Boolean isHotDeal,
-                                               String projectType, String buildingType, String zoningType, String listingType, Integer forSaleSince,
+                                               List<ProjectType> projectTypes, List<BuildingType> buildingTypes, List<ZoningType> zoningTypes, List<ListingType> listingTypes, Integer forSaleSince,
                                                String sortBy, String sortDir,
                                                int page, int size, UUID userId) {
         
@@ -138,19 +142,17 @@ public class LandService {
 
         if (city != null && !city.isBlank()) spec = spec.and(LandSpecification.hasCity(city));
         if (q != null && !q.isBlank()) spec = spec.and(LandSpecification.hasKeyword(q));
-        if (stage != null) spec = spec.and(LandSpecification.hasProjectStage(stage));
+        if (stages != null && !stages.isEmpty()) spec = spec.and(LandSpecification.hasProjectStages(stages));
         if (minPrice != null) spec = spec.and(LandSpecification.hasMinPrice(minPrice));
         if (maxPrice != null) spec = spec.and(LandSpecification.hasMaxPrice(maxPrice));
         if (minLotSize != null) spec = spec.and(LandSpecification.hasMinLotSize(minLotSize));
         if (maxLotSize != null) spec = spec.and(LandSpecification.hasMaxLotSize(maxLotSize));
         if (isFeatured != null) spec = spec.and(LandSpecification.isFeatured(isFeatured));
         if (isHotDeal != null) spec = spec.and(LandSpecification.isHotDeal(isHotDeal));
-        
-        // New filters
-        if (projectType != null && !projectType.isBlank()) spec = spec.and(LandSpecification.hasProjectType(projectType));
-        if (buildingType != null && !buildingType.isBlank()) spec = spec.and(LandSpecification.hasBuildingType(buildingType));
-        if (listingType != null && !listingType.isBlank()) spec = spec.and(LandSpecification.hasListingType(listingType));
-        if (zoningType != null && !zoningType.isBlank()) spec = spec.and(LandSpecification.hasZoningType(zoningType));
+        if (projectTypes != null && !projectTypes.isEmpty()) spec = spec.and(LandSpecification.hasProjectTypes(projectTypes));
+        if (buildingTypes != null && !buildingTypes.isEmpty()) spec = spec.and(LandSpecification.hasBuildingTypes(buildingTypes));
+        if (zoningTypes != null && !zoningTypes.isEmpty()) spec = spec.and(LandSpecification.hasZoningTypes(zoningTypes));
+        if (listingTypes != null && !listingTypes.isEmpty()) spec = spec.and(LandSpecification.hasListingTypes(listingTypes));
         if (forSaleSince != null) spec = spec.and(LandSpecification.forSaleSince(forSaleSince));
 
         boolean isVendorSort = sortBy != null && (
