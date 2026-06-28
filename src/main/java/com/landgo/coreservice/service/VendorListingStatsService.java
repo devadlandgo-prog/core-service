@@ -36,4 +36,11 @@ public class VendorListingStatsService {
         long draftsCount = draftRepository.countByOwnerIdAndStatusAndDeletedFalse(userId, DraftStatus.IN_PROGRESS);
         return landListingsCount + draftsCount;
     }
+
+    public void handleSubscriptionDowngrade(UUID userId) {
+        long slotsUsed = getSlotsUsed(userId);
+        // Note: Actual drafts are blocked dynamically in LandService/ListingDraftService.
+        // We log the downgrade event for auditing or future automated excess flagging.
+        System.out.println("Subscription downgraded for userId: " + userId + ". Current slots used: " + slotsUsed);
+    }
 }

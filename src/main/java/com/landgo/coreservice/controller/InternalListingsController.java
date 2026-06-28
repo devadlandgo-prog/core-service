@@ -25,4 +25,10 @@ public class InternalListingsController {
         long slotsUsed = vendorListingStatsService.getSlotsUsed(userId);
         return ResponseEntity.ok(Map.of("slotsUsed", slotsUsed));
     }
+
+    @org.springframework.web.bind.annotation.PostMapping("/user/{userId}/downgrade")
+    public ResponseEntity<Map<String, String>> handleDowngrade(@PathVariable UUID userId) {
+        vendorListingStatsService.handleSubscriptionDowngrade(userId);
+        return ResponseEntity.ok(Map.of("status", "Downgrade processed"));
+    }
 }

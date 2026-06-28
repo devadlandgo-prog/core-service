@@ -24,7 +24,7 @@ public class SecurityConfig {
                 .requestMatchers("/internal/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/listings/favorites", "/listings/mine").authenticated()
                 .requestMatchers(HttpMethod.GET, "/listings/**", "/professionals/**", "/locations/**", "/filter-options").permitAll()
-                .requestMatchers(HttpMethod.POST, "/listings/{id}/view").permitAll()
+                .requestMatchers(HttpMethod.POST, "/listings/{id}/view", "/listings/{id}/enquiry").permitAll()
                 .anyRequest().authenticated())
             .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
                 response.setContentType("application/json");

@@ -33,8 +33,15 @@ public class UploadController {
                 ? request.getContext().trim() 
                 : "general";
                 
-        // Store in a meaningful path: e.g. "uploads/listings/drafts/{uuid}"
-        String directory = "uploads/" + context + "/drafts/" + UUID.randomUUID().toString();
+        String directory;
+        if ("reviews".equalsIgnoreCase(context) || "professionals".equalsIgnoreCase(context)) {
+            // B-CON-04: Store reviews under professionals namespace
+            directory = "uploads/professionals/" + context + "/" + UUID.randomUUID().toString();
+        } else {
+            // Store in a meaningful path: e.g. "uploads/listings/drafts/{uuid}"
+            directory = "uploads/" + context + "/drafts/" + UUID.randomUUID().toString();
+        }
+        
         PresignedUrlResponse response = imageStorageService.generatePresignedUrl(request, directory);
         return ResponseEntity.ok(response);
     }
