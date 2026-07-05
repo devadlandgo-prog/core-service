@@ -79,14 +79,14 @@ public class LandService {
 
     @Transactional(readOnly = true)
     public PageResponse<LandResponse> getActiveLands(int page, int size, String sortBy, String sortDir, UUID userId) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDir), sortBy));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDir), sortBy).and(Sort.by(Sort.Direction.DESC, "id")));
         Page<Land> lands = landRepository.findByStatusAndDeletedFalse(LandStatus.ACTIVE, pageable);
         return getPageResponse(lands, userId);
     }
 
     @Transactional(readOnly = true)
     public PageResponse<LandResponse> getAllListingsForAdmin(LandStatus status, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
         Page<Land> lands = (status != null)
                 ? landRepository.findByStatusAndDeletedFalse(status, pageable)
                 : landRepository.findByDeletedFalse(pageable);
@@ -95,7 +95,7 @@ public class LandService {
 
     @Transactional(readOnly = true)
     public PageResponse<LandResponse> searchLands(String query, int page, int size, UUID userId) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
         Specification<Land> spec = LandSpecification.searchLands(query)
                 .and(LandSpecification.hasStatus(LandStatus.ACTIVE))
                 .and(LandSpecification.isNotDeleted());
@@ -136,7 +136,9 @@ public class LandService {
             }
         }
         
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortProperty));
+        Sort primarySort = Sort.by(direction, sortProperty);
+        Sort deterministicSort = primarySort.and(Sort.by(Sort.Direction.DESC, "id"));
+        Pageable pageable = PageRequest.of(page, size, deterministicSort);
         
         Specification<Land> spec = Specification.where(LandSpecification.excludeSoldUnlessSpecified(soldSince))
                 .and(LandSpecification.isNotDeleted());
