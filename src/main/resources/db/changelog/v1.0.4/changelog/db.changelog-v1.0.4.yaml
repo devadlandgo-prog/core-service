@@ -3,6 +3,13 @@ databaseChangeLog:
       id: 20260627-add-mls-mobile-number-column
       author: backend-team
       changes:
+          - sqlFile:
+              path: ../ddl/005_add_mls_mobile_number.sql
+              relativeToChangelogFile: true
+  - changeSet:
+      id: 20260705-add-api-requirement-fields
+      author: backend-team
+      changes:
         - sqlFile:
-            path: ../ddl/005_add_mls_mobile_number.sql
+            path: ../ddl/006_add_api_requirement_fields.sql
             relativeToChangelogFile: true

@@ -38,6 +38,25 @@ public class LandSpecification {
         return (root, query, cb) -> cb.equal(root.get("deleted"), false);
     }
 
+    public static Specification<Land> excludeSoldUnlessSpecified(Integer soldSinceDays) {
+        return (root, query, cb) -> {
+            if (soldSinceDays != null) {
+                // If soldSinceDays is provided, we specifically want SOLD properties within that timeframe.
+                java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(soldSinceDays);
+                return cb.and(
+                    cb.equal(root.get("status"), LandStatus.SOLD),
+                    cb.greaterThanOrEqualTo(root.get("updatedAt"), since)
+                );
+            } else {
+                // Otherwise exclude SOLD properties. 
+                // Return everything except SOLD (which includes ACTIVE, PENDING_APPROVAL, etc. depending on business logic, but ACTIVE is the norm for public searches)
+                // The requirements say: "Return only ACTIVE / LIVE listings (status != SOLD)"
+                // We'll use status != SOLD to be safe and match the requirement precisely.
+                return cb.notEqual(root.get("status"), LandStatus.SOLD);
+            }
+        };
+    }
+
     public static Specification<Land> hasKeyword(String keyword) {
         return (root, query, cb) -> {
             if (keyword == null || keyword.trim().isEmpty()) {

@@ -40,6 +40,9 @@ public class LandMapper {
                 .ownershipVerification(land.getOwnershipVerification())
                 .viewCount(land.getViewCount()).inquiryCount(land.getInquiryCount())
                 .isFeatured(land.isFeatured()).isHotDeal(land.isHotDeal())
+                .isRecommendation(land.isRecommendation())
+                .loginRequired(land.isLoginRequired())
+                .mls(land.isMls())
                 .agentManagement(land.isAgentManagement())
                 .personalUserId(land.getPersonalUserId())
                 .mlsMobileNumber(land.getMlsMobileNumber())
@@ -69,6 +72,9 @@ public class LandMapper {
         land.setAgentManagement(request.getAgentManagement() != null ? request.getAgentManagement() : false);
         land.setFeatured(request.getFeatured() != null ? request.getFeatured() : false);
         land.setHotDeal(request.getHotDeal() != null ? request.getHotDeal() : false);
+        land.setRecommendation(request.getIsRecommendation() != null ? request.getIsRecommendation() : false);
+        land.setLoginRequired(request.getLoginRequired() != null ? request.getLoginRequired() : false);
+        land.setMls(request.getMls() != null ? request.getMls() : false);
         land.setViewCount(0); land.setInquiryCount(0);
         LandCreateRequest.ProjectDetailsDto details = request.getProjectDetails();
         if (details == null && request.getAddress() != null) {
@@ -154,6 +160,15 @@ public class LandMapper {
         }
         if (request.getHotDeal() != null) {
             land.setHotDeal(request.getHotDeal());
+        }
+        if (request.getIsRecommendation() != null) {
+            land.setRecommendation(request.getIsRecommendation());
+        }
+        if (request.getLoginRequired() != null) {
+            land.setLoginRequired(request.getLoginRequired());
+        }
+        if (request.getMls() != null) {
+            land.setMls(request.getMls());
         }
         if (request.getMlsMobileNumber() != null) {
             land.setMlsMobileNumber(request.getMlsMobileNumber());

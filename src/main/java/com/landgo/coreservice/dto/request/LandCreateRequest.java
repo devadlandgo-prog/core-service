@@ -35,6 +35,15 @@ public class LandCreateRequest {
     @Schema(example = "false")
     private Boolean hotDeal;
     
+    @Schema(example = "false")
+    private Boolean isRecommendation;
+
+    @Schema(example = "false")
+    private Boolean loginRequired;
+
+    @Schema(example = "false")
+    private Boolean mls;
+
     private Boolean isAdmin;
 
     @Schema(example = "+14165550100", description = "MLS listing contact mobile number")

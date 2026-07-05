@@ -127,6 +127,15 @@ public class LandResponse {
     @Schema(example = "false")
     private boolean isFavorited;
 
+    @Schema(example = "false")
+    private boolean isRecommendation;
+
+    @Schema(example = "false")
+    private boolean loginRequired;
+
+    @Schema(example = "false")
+    private boolean mls;
+
     @Schema(example = "+14165550100", description = "MLS listing contact mobile number")
     private String mlsMobileNumber;
 

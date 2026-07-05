@@ -153,6 +153,7 @@ public class LandController {
             @RequestParam(required = false) List<String> zoningType,
             @RequestParam(required = false) List<String> listingType,
             @RequestParam(required = false) Integer forSaleSince,
+            @RequestParam(required = false) Integer soldSince,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDir,
             @RequestParam(defaultValue = "0") int page,
@@ -166,7 +167,7 @@ public class LandController {
 
         PageResponse<LandResponse> lands = landService.filterLands(
                 city, q, parsedStages, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
-                parsedProjectTypes, parsedBuildingTypes, parsedZoningTypes, parsedListingTypes, forSaleSince,
+                parsedProjectTypes, parsedBuildingTypes, parsedZoningTypes, parsedListingTypes, forSaleSince, soldSince,
                 sortBy, sortDir, page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }

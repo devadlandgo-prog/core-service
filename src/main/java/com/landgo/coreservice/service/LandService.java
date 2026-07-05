@@ -12,6 +12,7 @@ import com.landgo.coreservice.enums.ProjectType;
 import com.landgo.coreservice.enums.BuildingType;
 import com.landgo.coreservice.enums.ZoningType;
 import com.landgo.coreservice.enums.ListingType;
+import com.landgo.coreservice.exception.BadRequestException;
 import com.landgo.coreservice.exception.ForbiddenException;
 import com.landgo.coreservice.exception.ResourceNotFoundException;
 import com.landgo.coreservice.mapper.LandMapper;
@@ -105,7 +106,7 @@ public class LandService {
     @Transactional(readOnly = true)
     public PageResponse<LandResponse> filterLands(String city, String q, List<ProjectStage> stages, BigDecimal minPrice, BigDecimal maxPrice, 
                                                BigDecimal minLotSize, BigDecimal maxLotSize, Boolean isFeatured, Boolean isHotDeal,
-                                               List<ProjectType> projectTypes, List<BuildingType> buildingTypes, List<ZoningType> zoningTypes, List<ListingType> listingTypes, Integer forSaleSince,
+                                               List<ProjectType> projectTypes, List<BuildingType> buildingTypes, List<ZoningType> zoningTypes, List<ListingType> listingTypes, Integer forSaleSince, Integer soldSince,
                                                String sortBy, String sortDir,
                                                int page, int size, UUID userId) {
         
@@ -137,7 +138,7 @@ public class LandService {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortProperty));
         
-        Specification<Land> spec = Specification.where(LandSpecification.hasStatus(LandStatus.ACTIVE))
+        Specification<Land> spec = Specification.where(LandSpecification.excludeSoldUnlessSpecified(soldSince))
                 .and(LandSpecification.isNotDeleted());
 
         if (city != null && !city.isBlank()) spec = spec.and(LandSpecification.hasCity(city));
@@ -284,6 +285,16 @@ public class LandService {
         if (!isAdmin && !land.getVendorId().equals(userId)) {
             throw new ForbiddenException("You are not authorized to update this listing");
         }
+        
+        // MLS Validation logic
+        if (Boolean.TRUE.equals(request.getMls())) {
+            if (request.getMlsMobileNumber() == null || request.getMlsMobileNumber().isBlank()) {
+                throw new BadRequestException("mlsMobileNumber is required when mls is true", "VALIDATION_ERROR");
+            }
+        } else if (Boolean.FALSE.equals(request.getMls())) {
+            request.setMlsMobileNumber(null);
+        }
+
         landMapper.updateEntity(request, land);
         Land saved = landRepository.save(land);
         return getLandResponseWithFavorite(saved, userId);
