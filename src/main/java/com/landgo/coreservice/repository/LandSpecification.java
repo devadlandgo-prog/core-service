@@ -48,11 +48,12 @@ public class LandSpecification {
                     cb.greaterThanOrEqualTo(root.get("updatedAt"), since)
                 );
             } else {
-                // Otherwise exclude SOLD properties. 
-                // Return everything except SOLD (which includes ACTIVE, PENDING_APPROVAL, etc. depending on business logic, but ACTIVE is the norm for public searches)
-                // The requirements say: "Return only ACTIVE / LIVE listings (status != SOLD)"
-                // We'll use status != SOLD to be safe and match the requirement precisely.
-                return cb.notEqual(root.get("status"), LandStatus.SOLD);
+                // Otherwise return public listings (excluding SOLD, PENDING_APPROVAL, and REJECTED)
+                return cb.and(
+                    cb.notEqual(root.get("status"), LandStatus.SOLD),
+                    cb.notEqual(root.get("status"), LandStatus.PENDING_APPROVAL),
+                    cb.notEqual(root.get("status"), LandStatus.REJECTED)
+                );
             }
         };
     }

@@ -108,7 +108,11 @@ public class LandMapper {
         }
         if (request.getPhotos() != null) { land.setPhotos(request.getPhotos().stream().map(f -> { Map<String, String> m = new LinkedHashMap<>(); m.put("name", f.getName()); m.put("type", f.getType()); m.put("url", f.getUrl()); return m; }).collect(Collectors.toList())); }
         if (request.getDocuments() != null) { land.setDocuments(request.getDocuments().stream().map(f -> { Map<String, String> m = new LinkedHashMap<>(); m.put("name", f.getName()); m.put("type", f.getType()); m.put("url", f.getUrl()); return m; }).collect(Collectors.toList())); }
-        if (request.getMlsMobileNumber() != null) land.setMlsMobileNumber(request.getMlsMobileNumber());
+        if (land.isMls()) {
+            if (request.getMlsMobileNumber() != null) land.setMlsMobileNumber(request.getMlsMobileNumber());
+        } else {
+            land.setMlsMobileNumber(null);
+        }
         return land;
     }
 
@@ -170,8 +174,12 @@ public class LandMapper {
         if (request.getMls() != null) {
             land.setMls(request.getMls());
         }
-        if (request.getMlsMobileNumber() != null) {
-            land.setMlsMobileNumber(request.getMlsMobileNumber());
+        if (land.isMls()) {
+            if (request.getMlsMobileNumber() != null) {
+                land.setMlsMobileNumber(request.getMlsMobileNumber());
+            }
+        } else {
+            land.setMlsMobileNumber(null);
         }
     }
 
