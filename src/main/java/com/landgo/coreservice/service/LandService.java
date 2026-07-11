@@ -60,6 +60,18 @@ public class LandService {
             }
         }
 
+        // MLS Validation logic
+        if (Boolean.TRUE.equals(request.getMls())) {
+            if (request.getMlsMobileNumber() == null || request.getMlsMobileNumber().isBlank()) {
+                throw new BadRequestException("mlsMobileNumber is required when mls is true", "VALIDATION_ERROR");
+            }
+            if (!request.getMlsMobileNumber().matches("^\\+?[0-9\\s\\-\\(\\)]{7,20}$")) {
+                throw new BadRequestException("Invalid mlsMobileNumber format. Must be a valid phone number.", "VALIDATION_ERROR");
+            }
+        } else if (Boolean.FALSE.equals(request.getMls())) {
+            request.setMlsMobileNumber(null);
+        }
+
         Land land = landMapper.toEntity(request);
         land.setVendorId(vendorId);
         land.setStatus(LandStatus.PENDING_APPROVAL);
