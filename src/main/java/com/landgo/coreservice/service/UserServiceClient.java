@@ -130,18 +130,46 @@ public class UserServiceClient {
         }
     }
 
+    @Value("${app.mail.logo-url:https://landgo.app/logo_with_tagline.png}")
+    private String logoUrl;
+
     public void sendEmail(String toEmail, String subject, String templateName, java.util.Map<String, String> variables) {
         try {
+            String htmlBody = renderTemplate(templateName, variables);
+
             java.util.Map<String, Object> payload = new java.util.HashMap<>();
             payload.put("toEmail", toEmail);
             payload.put("subject", subject);
-            payload.put("templateName", templateName);
-            payload.put("variables", variables);
+            payload.put("htmlBody", htmlBody);
 
             restTemplate.postForObject(userServiceUrl + "/internal/users/email/send", payload, Void.class);
-            log.info("Successfully sent internal email request for template: {}", templateName);
-        } catch (RestClientException e) {
-            log.error("Failed to send internal email request for template {}: {}", templateName, e.getMessage());
+            log.info("Successfully sent internal HTML email request for template: {}", templateName);
+        } catch (Exception e) {
+            log.error("Failed to render/send internal email request for template {}: {}", templateName, e.getMessage());
         }
+    }
+
+    private String renderTemplate(String templateName, java.util.Map<String, String> variables) throws java.io.IOException {
+        String templatePath = "email-templates/" + templateName + ".html";
+        org.springframework.core.io.ClassPathResource resource = new org.springframework.core.io.ClassPathResource(templatePath);
+        if (!resource.exists()) {
+            throw new IllegalArgumentException("Template file not found: " + templatePath);
+        }
+        String template = new String(resource.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+
+        // Inject logoUrl
+        template = template.replace("/static/icon.svg", logoUrl);
+        template = template.replace("{{logoUrl}}", logoUrl);
+
+        if (variables != null) {
+            for (java.util.Map.Entry<String, String> entry : variables.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue() != null ? entry.getValue() : "";
+                template = template.replace("<!-- -->" + key + "<!-- -->", value);
+                template = template.replace("{{" + key + "}}", value);
+                template = template.replace("${" + key + "}", value);
+            }
+        }
+        return template;
     }
 }
