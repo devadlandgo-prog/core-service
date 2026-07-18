@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260716-create-legal-documents-table
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/007_create_legal_documents.sql
+            relativeToChangelogFile: true
+  - changeSet:
+      id: 20260716-seed-legal-documents
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../dml/002_seed_legal_documents.sql
+            relativeToChangelogFile: true

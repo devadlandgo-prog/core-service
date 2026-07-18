@@ -152,6 +152,7 @@ public class LandController {
             @RequestParam(required = false) List<String> buildingType,
             @RequestParam(required = false) List<String> zoningType,
             @RequestParam(required = false) List<String> listingType,
+            @RequestParam(required = false) List<String> status,
             @RequestParam(required = false) Integer forSaleSince,
             @RequestParam(required = false) Integer soldSince,
             @RequestParam(required = false) String sortBy,
@@ -164,10 +165,12 @@ public class LandController {
         List<BuildingType> parsedBuildingTypes = parseEnumList(BuildingType.class, buildingType, "buildingType");
         List<ZoningType> parsedZoningTypes = parseEnumList(ZoningType.class, zoningType, "zoningType");
         List<ListingType> parsedListingTypes = parseEnumList(ListingType.class, listingType, "listingType");
+        List<LandStatus> parsedStatuses = parseEnumList(LandStatus.class, status, "status");
 
         PageResponse<LandResponse> lands = landService.filterLands(
                 city, q, parsedStages, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
-                parsedProjectTypes, parsedBuildingTypes, parsedZoningTypes, parsedListingTypes, forSaleSince, soldSince,
+                parsedProjectTypes, parsedBuildingTypes, parsedZoningTypes, parsedListingTypes,
+                parsedStatuses, forSaleSince, soldSince,
                 sortBy, sortDir, page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }

@@ -118,7 +118,8 @@ public class LandService {
     @Transactional(readOnly = true)
     public PageResponse<LandResponse> filterLands(String city, String q, List<ProjectStage> stages, BigDecimal minPrice, BigDecimal maxPrice, 
                                                BigDecimal minLotSize, BigDecimal maxLotSize, Boolean isFeatured, Boolean isHotDeal,
-                                               List<ProjectType> projectTypes, List<BuildingType> buildingTypes, List<ZoningType> zoningTypes, List<ListingType> listingTypes, Integer forSaleSince, Integer soldSince,
+                                               List<ProjectType> projectTypes, List<BuildingType> buildingTypes, List<ZoningType> zoningTypes, List<ListingType> listingTypes,
+                                               List<LandStatus> statuses, Integer forSaleSince, Integer soldSince,
                                                String sortBy, String sortDir,
                                                int page, int size, UUID userId) {
         
@@ -152,7 +153,7 @@ public class LandService {
         Sort deterministicSort = primarySort.and(Sort.by(Sort.Direction.DESC, "id"));
         Pageable pageable = PageRequest.of(page, size, deterministicSort);
         
-        Specification<Land> spec = Specification.where(LandSpecification.excludeSoldUnlessSpecified(soldSince))
+        Specification<Land> spec = Specification.where(LandSpecification.hasStatusesAndSoldSince(statuses, soldSince))
                 .and(LandSpecification.isNotDeleted());
 
         if (city != null && !city.isBlank()) spec = spec.and(LandSpecification.hasCity(city));

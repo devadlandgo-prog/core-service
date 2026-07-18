@@ -38,6 +38,38 @@ public class LandSpecification {
         return (root, query, cb) -> cb.equal(root.get("deleted"), false);
     }
 
+    public static Specification<Land> hasStatusesAndSoldSince(java.util.List<LandStatus> statuses, Integer soldSinceDays) {
+        return (root, query, cb) -> {
+            java.util.List<LandStatus> queryStatuses = statuses;
+            if (queryStatuses == null || queryStatuses.isEmpty()) {
+                queryStatuses = java.util.List.of(LandStatus.ACTIVE, LandStatus.SOLD);
+            }
+            
+            queryStatuses = queryStatuses.stream()
+                    .filter(s -> s == LandStatus.ACTIVE || s == LandStatus.SOLD)
+                    .toList();
+            
+            if (queryStatuses.isEmpty()) {
+                return cb.disjunction();
+            }
+            
+            java.util.List<Predicate> predicates = new java.util.ArrayList<>();
+            for (LandStatus status : queryStatuses) {
+                if (status == LandStatus.SOLD && soldSinceDays != null) {
+                    java.time.LocalDateTime since = java.time.LocalDateTime.now().minusDays(soldSinceDays);
+                    predicates.add(cb.and(
+                        cb.equal(root.get("status"), LandStatus.SOLD),
+                        cb.greaterThanOrEqualTo(root.get("updatedAt"), since)
+                    ));
+                } else {
+                    predicates.add(cb.equal(root.get("status"), status));
+                }
+            }
+            
+            return cb.or(predicates.toArray(new Predicate[0]));
+        };
+    }
+
     public static Specification<Land> excludeSoldUnlessSpecified(Integer soldSinceDays) {
         return (root, query, cb) -> {
             if (soldSinceDays != null) {
