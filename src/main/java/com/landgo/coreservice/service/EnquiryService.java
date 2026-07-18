@@ -1,8 +1,11 @@
 package com.landgo.coreservice.service;
 
 import com.landgo.coreservice.entity.Enquiry;
+import com.landgo.coreservice.entity.Land;
 import com.landgo.coreservice.enums.EnquiryStatus;
 import com.landgo.coreservice.repository.EnquiryRepository;
+import com.landgo.coreservice.repository.LandRepository;
+import com.landgo.coreservice.dto.response.UserResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +20,8 @@ import java.util.UUID;
 public class EnquiryService {
 
     private final EnquiryRepository enquiryRepository;
+    private final LandRepository landRepository;
+    private final UserServiceClient userServiceClient;
 
     @Transactional
     public void createEnquiry(UUID listingId, String senderNameOrEmail, String phone, String message) {
@@ -27,7 +32,6 @@ public class EnquiryService {
         
         if (senderNameOrEmail != null && senderNameOrEmail.contains("@")) {
             email = senderNameOrEmail;
-            // Optionally set name to the part before @ if we want to be smart
             name = senderNameOrEmail.split("@")[0];
         } else {
             name = senderNameOrEmail;
@@ -43,6 +47,26 @@ public class EnquiryService {
                 .build();
         enquiryRepository.save(enquiry);
         log.info("Transaction COMMIT: Enquiry saved for listing {}", listingId);
+
+        try {
+            final String finalName = name;
+            final String finalEmail = email;
+            landRepository.findByIdAndDeletedFalse(listingId).ifPresent(land -> {
+                UserResponse vendor = userServiceClient.getUserById(land.getVendorId());
+                if (vendor != null) {
+                    java.util.Map<String, String> vars = new java.util.HashMap<>();
+                    vars.put("Owner", vendor.getFullName());
+                    vars.put("listingTitle", getListingTitle(land));
+                    vars.put("senderName", finalName != null ? finalName : "A potential buyer");
+                    vars.put("senderEmail", finalEmail != null ? finalEmail : "N/A");
+                    vars.put("senderPhone", phone != null ? phone : "N/A");
+                    vars.put("message", message != null ? message : "");
+                    userServiceClient.sendEmail(vendor.getEmail(), "LandGo - New Inquiry Received", "InquiryReceived", vars);
+                }
+            });
+        } catch (Exception e) {
+            log.error("Failed to send inquiry email notification for listingId: {}", listingId, e);
+        }
     }
 
     public List<Enquiry> getAllEnquiries() {
@@ -68,5 +92,15 @@ public class EnquiryService {
                 .orElseThrow(() -> new RuntimeException("Enquiry not found"));
         enquiryRepository.delete(enquiry);
         log.info("Transaction COMMIT: Enquiry {} deleted", id);
+    }
+
+    private String getListingTitle(Land land) {
+        if (land.getProjectSpecification() != null) {
+            Object rawTitle = land.getProjectSpecification().get("title");
+            if (rawTitle != null) {
+                return rawTitle.toString();
+            }
+        }
+        return "Beautiful Land Listing";
     }
 }

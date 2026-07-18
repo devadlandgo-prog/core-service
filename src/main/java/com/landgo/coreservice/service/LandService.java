@@ -3,6 +3,7 @@ package com.landgo.coreservice.service;
 import com.landgo.coreservice.dto.request.LandCreateRequest;
 import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.dto.response.VendorResponse;
+import com.landgo.coreservice.dto.response.UserResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
 import com.landgo.coreservice.entity.FavoriteListing;
 import com.landgo.coreservice.entity.Land;
@@ -79,6 +80,17 @@ public class LandService {
         land.setInquiryCount(0);
         Land saved = landRepository.save(land);
         log.debug("Land created with id: {}", saved.getId());
+        try {
+            UserResponse user = userServiceClient.getUserById(vendorId);
+            if (user != null) {
+                java.util.Map<String, String> vars = new java.util.HashMap<>();
+                vars.put("User", user.getFullName());
+                vars.put("listingTitle", getListingTitle(saved));
+                userServiceClient.sendEmail(user.getEmail(), "LandGo - Listing Submitted", "ListingSubmitted", vars);
+            }
+        } catch (Exception e) {
+            log.error("Failed to send listing submitted email for landId: {}", saved.getId(), e);
+        }
         return getLandResponseWithFavorite(saved, vendorId);
     }
 
@@ -288,8 +300,27 @@ public class LandService {
             }
         }
         
+        LandStatus oldStatus = land.getStatus();
         land.setStatus(status);
         Land saved = landRepository.save(land);
+        if (oldStatus != status) {
+            try {
+                UserResponse user = userServiceClient.getUserById(saved.getVendorId());
+                if (user != null) {
+                    java.util.Map<String, String> vars = new java.util.HashMap<>();
+                    vars.put("User", user.getFullName());
+                    vars.put("listingTitle", getListingTitle(saved));
+                    if (status == LandStatus.ACTIVE) {
+                        userServiceClient.sendEmail(user.getEmail(), "LandGo - Listing Approved", "ListingApproved", vars);
+                    } else if (status == LandStatus.REJECTED) {
+                        vars.put("rejectionReason", "Listing does not meet our quality guidelines.");
+                        userServiceClient.sendEmail(user.getEmail(), "LandGo - Listing Rejected", "ListingRejected", vars);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to send listing status change email for landId: {} to status: {}", saved.getId(), status, e);
+            }
+        }
         return getLandResponseWithFavorite(saved, userId);
     }
 
@@ -572,5 +603,15 @@ public class LandService {
         usage.put("total", total);
         usage.put("maxListings", maxListings == null ? 0 : maxListings);
         return usage;
+    }
+
+    private String getListingTitle(Land land) {
+        if (land.getProjectSpecification() != null) {
+            Object rawTitle = land.getProjectSpecification().get("title");
+            if (rawTitle != null) {
+                return rawTitle.toString();
+            }
+        }
+        return "Beautiful Land Listing";
     }
 }

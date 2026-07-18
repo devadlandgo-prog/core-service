@@ -129,4 +129,19 @@ public class UserServiceClient {
             throw new BadRequestException("Unable to create subscription intent");
         }
     }
+
+    public void sendEmail(String toEmail, String subject, String templateName, java.util.Map<String, String> variables) {
+        try {
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("toEmail", toEmail);
+            payload.put("subject", subject);
+            payload.put("templateName", templateName);
+            payload.put("variables", variables);
+
+            restTemplate.postForObject(userServiceUrl + "/internal/users/email/send", payload, Void.class);
+            log.info("Successfully sent internal email request for template: {}", templateName);
+        } catch (RestClientException e) {
+            log.error("Failed to send internal email request for template {}: {}", templateName, e.getMessage());
+        }
+    }
 }
