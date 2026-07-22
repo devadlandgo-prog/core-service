@@ -56,7 +56,8 @@ public class LandService {
             long currentDraftCount = draftRepository.countByOwnerIdAndStatusAndDeletedFalse(vendorId, com.landgo.coreservice.enums.DraftStatus.IN_PROGRESS);
             if (currentListingCount + currentDraftCount >= maxListings) {
                 throw new com.landgo.coreservice.exception.BadRequestException(
-                    String.format("You have reached your maximum listing limit of %d. Please upgrade your subscription to post more listings.", maxListings)
+                    String.format("You have reached your listing slot limit (%d). Please choose a plan to list more land.", maxListings),
+                    "SLOT_LIMIT_REACHED"
                 );
             }
         }
@@ -595,13 +596,16 @@ public class LandService {
         long total = landRepository.countAllByVendorIdAndDeletedFalse(userId) + draft;
         
         Integer maxListings = userServiceClient.getUserMaxListings(userId);
+        int maxLimit = maxListings == null ? 0 : maxListings;
+        long remainingSlots = Math.max(0, (long) maxLimit - total);
         
         Map<String, Object> usage = new LinkedHashMap<>();
         usage.put("draft", draft);
         usage.put("pending", pending);
         usage.put("live", live);
         usage.put("total", total);
-        usage.put("maxListings", maxListings == null ? 0 : maxListings);
+        usage.put("maxListings", maxLimit);
+        usage.put("remainingSlots", remainingSlots);
         return usage;
     }
 

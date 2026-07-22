@@ -38,8 +38,9 @@ public class ListingDraftService {
             long currentListingCount = landRepository.countAllByVendorIdAndDeletedFalse(userId);
             long currentDraftCount = draftRepository.countByOwnerIdAndStatusAndDeletedFalse(userId, DraftStatus.IN_PROGRESS);
             if (currentListingCount + currentDraftCount >= maxListings) {
-                throw new com.landgo.coreservice.exception.ForbiddenException(
-                    String.format("You have reached your maximum listing limit of %d. Please upgrade your subscription to create more drafts.", maxListings)
+                throw new com.landgo.coreservice.exception.BadRequestException(
+                    String.format("You have reached your listing slot limit (%d). Please choose a plan to list more land.", maxListings),
+                    "SLOT_LIMIT_REACHED"
                 );
             }
         }
