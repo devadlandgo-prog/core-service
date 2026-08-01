@@ -2,7 +2,12 @@ package com.landgo.coreservice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -34,4 +39,15 @@ public class LegalDocument {
 
     @Column(name = "content_html", nullable = false, columnDefinition = "TEXT")
     private String contentHtml;
+
+    /** Alternate slugs this document also resolves under, e.g. "privacy-policy" for "privacy". */
+    @Builder.Default
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "aliases", columnDefinition = "jsonb")
+    private List<String> aliases = new ArrayList<>();
+
+    /** Protected documents back public web pages and cannot be deleted. */
+    @Builder.Default
+    @Column(name = "protected", nullable = false)
+    private boolean protectedDocument = false;
 }

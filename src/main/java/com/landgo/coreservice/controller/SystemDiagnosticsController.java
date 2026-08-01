@@ -3,6 +3,7 @@ package com.landgo.coreservice.controller;
 import com.landgo.coreservice.dto.response.ApiResponse;
 import com.landgo.coreservice.entity.Enquiry;
 import com.landgo.coreservice.repository.EnquiryRepository;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @Slf4j
+@Hidden
 @RestController
 @RequestMapping("/internal/diagnostics")
 @RequiredArgsConstructor

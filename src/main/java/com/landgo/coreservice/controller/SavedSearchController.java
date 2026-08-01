@@ -7,6 +7,8 @@ import com.landgo.coreservice.dto.response.SavedSearchResponse;
 import com.landgo.coreservice.security.CurrentUser;
 import com.landgo.coreservice.service.SavedSearchService;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,11 +19,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/listings/saved-searches")
 @RequiredArgsConstructor
+@Tag(name = "Saved Searches", description = "Save and manage listing search filters; toggle push notification alerts per search")
 public class SavedSearchController {
 
     private final SavedSearchService savedSearchService;
 
     @PostMapping
+    @Operation(summary = "Create a saved search")
     public ResponseEntity<ApiResponse<SavedSearchResponse>> createSavedSearch(
             @CurrentUser UUID userId,
             @Valid @RequestBody SavedSearchRequest request) {
@@ -31,6 +35,7 @@ public class SavedSearchController {
     }
 
     @GetMapping
+    @Operation(summary = "List my saved searches")
     public ResponseEntity<ApiResponse<PageResponse<SavedSearchResponse>>> getMySavedSearches(
             @CurrentUser UUID userId,
             @RequestParam(defaultValue = "0") int page,
@@ -40,6 +45,7 @@ public class SavedSearchController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get a saved search by ID")
     public ResponseEntity<ApiResponse<SavedSearchResponse>> getSavedSearch(
             @CurrentUser UUID userId,
             @PathVariable UUID id) {
@@ -48,6 +54,7 @@ public class SavedSearchController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update a saved search")
     public ResponseEntity<ApiResponse<SavedSearchResponse>> updateSavedSearch(
             @CurrentUser UUID userId,
             @PathVariable UUID id,
@@ -57,6 +64,7 @@ public class SavedSearchController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a saved search")
     public ResponseEntity<ApiResponse<Void>> deleteSavedSearch(
             @CurrentUser UUID userId,
             @PathVariable UUID id) {
@@ -65,6 +73,7 @@ public class SavedSearchController {
     }
 
     @PatchMapping("/{id}/notifications")
+    @Operation(summary = "Toggle push notifications for a saved search", description = "Enables or disables listing-alert push notifications for this saved search criteria.")
     public ResponseEntity<ApiResponse<SavedSearchResponse>> toggleNotifications(
             @CurrentUser UUID userId,
             @PathVariable UUID id) {

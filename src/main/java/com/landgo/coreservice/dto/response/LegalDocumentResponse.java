@@ -2,6 +2,7 @@ package com.landgo.coreservice.dto.response;
 
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -14,4 +15,5 @@ public class LegalDocumentResponse {
     private String version;
     private LocalDateTime updatedAt;
     private String contentHtml;
+    private List<String> aliases;
 }

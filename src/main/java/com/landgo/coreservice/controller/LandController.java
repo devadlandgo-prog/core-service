@@ -245,6 +245,7 @@ public class LandController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update a land listing", description = "Vendor updates their own listing; admins may update any listing.")
     public ResponseEntity<ApiResponse<LandResponse>> updateLand(
             @CurrentUser UUID userId,
             @AuthenticationPrincipal UserPrincipal principal,
@@ -256,6 +257,7 @@ public class LandController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a land listing", description = "Vendor may delete their own listing; admins may delete any listing.")
     public ResponseEntity<ApiResponse<Void>> deleteLand(
             @CurrentUser UUID userId,
             @AuthenticationPrincipal UserPrincipal principal,
@@ -266,6 +268,7 @@ public class LandController {
     }
 
     @PatchMapping("/{id}/status")
+    @Operation(summary = "Update listing status", description = "Admin: approve, reject, or mark a listing as sold. Vendor: withdraw their own listing.")
     public ResponseEntity<ApiResponse<LandResponse>> updateLandStatus(
             @CurrentUser UUID userId,
             @org.springframework.security.core.annotation.AuthenticationPrincipal UserPrincipal principal,
@@ -282,6 +285,7 @@ public class LandController {
      */
     @GetMapping("/admin/all")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all listings for admin", description = "Returns all listings across every status. Optionally filter by ?status=PENDING_APPROVAL.")
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> getAllListingsForAdmin(
             @RequestParam(required = false) LandStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -291,6 +295,7 @@ public class LandController {
     }
 
     @PostMapping("/{id}/favorite")
+    @Operation(summary = "Toggle listing favourite", description = "Adds or removes this listing from the authenticated user's favourites. Returns the new state.")
     public ResponseEntity<ApiResponse<Map<String, Boolean>>> toggleFavorite(
             @CurrentUser UUID userId,
             @PathVariable UUID id) {
@@ -299,6 +304,7 @@ public class LandController {
     }
 
     @PostMapping("/{id}/view")
+    @Operation(summary = "Record a listing view", description = "Increments the view counter for analytics. Call once per page load.")
     public ResponseEntity<ApiResponse<Map<String, String>>> incrementView(
             @PathVariable UUID id) {
         landService.incrementViewCount(id);
@@ -306,6 +312,7 @@ public class LandController {
     }
 
     @PostMapping("/{id}/enquiry")
+    @Operation(summary = "Send an enquiry on a listing", description = "Submits a buyer enquiry to the listing vendor. No auth required.")
     public ResponseEntity<ApiResponse<Void>> sendEnquiry(
             @PathVariable UUID id,
             @Valid @RequestBody EnquiryRequest request) {

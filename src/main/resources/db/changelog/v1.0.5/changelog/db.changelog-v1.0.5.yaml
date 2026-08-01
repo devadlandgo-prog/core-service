@@ -13,3 +13,10 @@ databaseChangeLog:
         - sqlFile:
             path: ../dml/002_seed_legal_documents.sql
             relativeToChangelogFile: true
+  - changeSet:
+      id: 20260802-legal-documents-aliases-and-protection
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/008_legal_documents_aliases.sql
+            relativeToChangelogFile: true
