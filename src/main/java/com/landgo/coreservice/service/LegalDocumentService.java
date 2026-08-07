@@ -4,6 +4,7 @@ import com.landgo.coreservice.dto.request.LegalDocumentCreateRequest;
 import com.landgo.coreservice.dto.request.LegalDocumentRequest;
 import com.landgo.coreservice.dto.response.LegalDocumentDeleteResponse;
 import com.landgo.coreservice.dto.response.LegalDocumentResponse;
+import com.landgo.coreservice.dto.response.LegalDocumentSummaryResponse;
 import com.landgo.coreservice.entity.LegalDocument;
 import com.landgo.coreservice.exception.ApiException;
 import com.landgo.coreservice.exception.BadRequestException;
@@ -43,6 +44,20 @@ public class LegalDocumentService {
     @Transactional(readOnly = true)
     public LegalDocumentResponse getLegalDocument(String documentType) {
         return toResponse(requireDocument(documentType));
+    }
+
+    /**
+     * Every registered legal document, ordered by type so the admin table is stable across reloads.
+     *
+     * <p>Not paginated: this table holds one row per document type — a handful in practice — so a
+     * page wrapper would add ceremony to every caller for no benefit. Revisit if types ever grow
+     * into the hundreds.
+     */
+    @Transactional(readOnly = true)
+    public List<LegalDocumentSummaryResponse> listLegalDocuments() {
+        return legalDocumentRepository.findAllByOrderByDocumentTypeAsc().stream()
+                .map(this::toSummaryResponse)
+                .toList();
     }
 
     @Transactional
@@ -218,6 +233,18 @@ public class LegalDocumentService {
                 "Legal document not found for type: " + documentType,
                 HttpStatus.NOT_FOUND,
                 "LEGAL_DOCUMENT_NOT_FOUND");
+    }
+
+    private LegalDocumentSummaryResponse toSummaryResponse(LegalDocument doc) {
+        return LegalDocumentSummaryResponse.builder()
+                .documentType(doc.getDocumentType())
+                .title(doc.getTitle())
+                .locale(doc.getLocale())
+                .version(doc.getVersion())
+                .updatedAt(doc.getUpdatedAt())
+                .aliases(doc.getAliases() == null ? List.of() : doc.getAliases())
+                .protectedDocument(doc.isProtectedDocument())
+                .build();
     }
 
     private LegalDocumentResponse toResponse(LegalDocument doc) {

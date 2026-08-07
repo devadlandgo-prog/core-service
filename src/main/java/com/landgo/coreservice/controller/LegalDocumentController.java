@@ -5,6 +5,7 @@ import com.landgo.coreservice.dto.request.LegalDocumentRequest;
 import com.landgo.coreservice.dto.response.ApiResponse;
 import com.landgo.coreservice.dto.response.LegalDocumentDeleteResponse;
 import com.landgo.coreservice.dto.response.LegalDocumentResponse;
+import com.landgo.coreservice.dto.response.LegalDocumentSummaryResponse;
 import com.landgo.coreservice.service.LegalDocumentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/legal")
 @RequiredArgsConstructor
@@ -22,6 +25,16 @@ import org.springframework.web.bind.annotation.*;
 public class LegalDocumentController {
 
     private final LegalDocumentService legalDocumentService;
+
+    @GetMapping({"", "/"})
+    @Operation(summary = "List all legal document types",
+            description = "Returns every registered legal document as a summary — no contentHtml, "
+                    + "since a listing is for building an admin table or a footer of links. "
+                    + "Fetch GET /legal/{documentType} for the body. Public endpoint.")
+    public ResponseEntity<ApiResponse<List<LegalDocumentSummaryResponse>>> listLegalDocuments() {
+        List<LegalDocumentSummaryResponse> response = legalDocumentService.listLegalDocuments();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     @GetMapping("/{documentType}")
     @Operation(summary = "Get legal document by type",
