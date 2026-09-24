@@ -28,19 +28,22 @@ public class ListingDraftService {
 
     private final ListingDraftRepository draftRepository;
     private final UserServiceClient userServiceClient;
-    private final com.landgo.coreservice.repository.LandRepository landRepository;
 
     @Transactional
     public DraftResponse createDraft(UUID userId) {
-        // Enforce listing limit (cap)
-        Integer maxListings = userServiceClient.getUserMaxListings(userId);
-        if (maxListings != null) {
-            long currentListingCount = landRepository.countAllByVendorIdAndDeletedFalse(userId);
-            long currentDraftCount = draftRepository.countByOwnerIdAndStatusAndDeletedFalse(userId, DraftStatus.IN_PROGRESS);
-            if (currentListingCount + currentDraftCount >= maxListings) {
+        // A draft costs nothing — the credit is spent when the listing is actually posted. But
+        // letting someone fill in a whole listing they have no credit to publish wastes their
+        // time, so the balance is checked up front. Drafts already in progress count against it,
+        // since each one will need its own credit at submission.
+        UserServiceClient.ListingCredits credits = userServiceClient.getListingCredits(userId);
+        if (credits != null) {
+            long draftsInProgress =
+                    draftRepository.countByOwnerIdAndStatusAndDeletedFalse(userId, DraftStatus.IN_PROGRESS);
+            if (credits.available() - draftsInProgress <= 0) {
                 throw new com.landgo.coreservice.exception.BadRequestException(
-                    String.format("You have reached your listing slot limit (%d). Please choose a plan to list more land.", maxListings),
-                    "SLOT_LIMIT_REACHED"
+                    "You have no listing credits left. Buy a land listing package to start another "
+                            + "listing — credits never expire.",
+                    "NO_LISTING_CREDITS"
                 );
             }
         }

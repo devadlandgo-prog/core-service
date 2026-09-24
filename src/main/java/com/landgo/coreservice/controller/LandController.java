@@ -268,14 +268,17 @@ public class LandController {
     }
 
     @PatchMapping("/{id}/status")
-    @Operation(summary = "Update listing status", description = "Admin: approve, reject, or mark a listing as sold. Vendor: withdraw their own listing.")
+    @Operation(summary = "Update listing status",
+            description = "Admin: approve, reject, or mark a listing as sold. Vendor: withdraw their own listing. "
+                    + "Supply `reason` when rejecting — it is sent to the owner verbatim so they know what to fix.")
     public ResponseEntity<ApiResponse<LandResponse>> updateLandStatus(
             @CurrentUser UUID userId,
             @org.springframework.security.core.annotation.AuthenticationPrincipal UserPrincipal principal,
             @PathVariable UUID id,
-            @RequestParam LandStatus status) {
+            @RequestParam LandStatus status,
+            @RequestParam(required = false) String reason) {
         boolean isAdmin = principal != null && principal.getRole() == com.landgo.coreservice.enums.Role.ADMIN;
-        LandResponse land = landService.updateLandStatus(id, status, userId, isAdmin);
+        LandResponse land = landService.updateLandStatus(id, status, userId, isAdmin, reason);
         return ResponseEntity.ok(ApiResponse.success("Land status updated", land));
     }
 

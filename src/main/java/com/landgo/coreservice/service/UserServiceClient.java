@@ -83,6 +83,72 @@ public class UserServiceClient {
         }
     }
 
+    /**
+     * Aggregated land-listing credit entitlement from payment-service.
+     *
+     * <p>Credits, not a plan-tier cap: a user who has bought three packages has three packages'
+     * worth of credits, which the old plan-derived {@code maxListings} could not express.
+     *
+     * @return purchased/used/available counts, or null when payment-service is unreachable
+     */
+    public ListingCredits getListingCredits(UUID userId) {
+        try {
+            Map<?, ?> response = restTemplate.getForObject(
+                    paymentServiceUrl + "/internal/listing-credits/user/" + userId, Map.class);
+            if (response == null) {
+                return null;
+            }
+            return new ListingCredits(
+                    intValue(response.get("creditsPurchased")),
+                    intValue(response.get("creditsUsed")),
+                    intValue(response.get("creditsAvailable")));
+        } catch (RestClientException e) {
+            log.warn("Failed to fetch listing credits for userId={}: {}", userId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Spends one listing credit.
+     *
+     * <p>The spend happens in payment-service under a conditional update, so two listings
+     * submitted at the same moment cannot both take the last credit.
+     *
+     * @param idempotencyKey reuse across retries of the same submission so it is spent once
+     * @throws BadRequestException when the user has no credit left
+     */
+    public void consumeListingCredit(UUID userId, UUID listingId, String idempotencyKey) {
+        String url = paymentServiceUrl + "/internal/listing-credits/user/" + userId + "/consume"
+                + "?idempotencyKey=" + java.net.URLEncoder.encode(idempotencyKey, java.nio.charset.StandardCharsets.UTF_8)
+                + (listingId != null ? "&listingId=" + listingId : "");
+        try {
+            restTemplate.postForObject(url, null, Map.class);
+        } catch (org.springframework.web.client.HttpClientErrorException.Conflict e) {
+            throw new BadRequestException(
+                    "You have no listing credits left. Buy a land listing package to post another listing.",
+                    "NO_LISTING_CREDITS");
+        } catch (RestClientException e) {
+            // Failing closed: granting a listing for free because billing is unreachable is worse
+            // than asking the user to retry.
+            log.error("Could not spend a listing credit for userId={}: {}", userId, e.getMessage());
+            throw new BadRequestException(
+                    "Could not verify your listing credits right now. Please try again shortly.",
+                    "LISTING_CREDITS_UNAVAILABLE");
+        }
+    }
+
+    private int intValue(Object raw) {
+        return raw instanceof Number number ? number.intValue() : 0;
+    }
+
+    /** Aggregated credit counts for one user. */
+    public record ListingCredits(int purchased, int used, int available) {}
+
+    /**
+     * @deprecated superseded by {@link #getListingCredits(UUID)}. This reported a plan-tier cap
+     *             that ignored repeat purchases entirely.
+     */
+    @Deprecated
     public Integer getUserMaxListings(UUID userId) {
         try {
             Map<?, ?> response = restTemplate.getForObject(
@@ -133,7 +199,24 @@ public class UserServiceClient {
     @Value("${app.mail.logo-url:https://landgo.app/logo_with_tagline.png}")
     private String logoUrl;
 
+    /**
+     * @deprecated use {@link #sendEmail(String, String, String, Map, String)} — an email with no
+     *             idempotency key is re-sent on every retry of the transition that caused it.
+     */
+    @Deprecated
     public void sendEmail(String toEmail, String subject, String templateName, java.util.Map<String, String> variables) {
+        sendEmail(toEmail, subject, templateName, variables, null);
+    }
+
+    /**
+     * Queues one transactional email.
+     *
+     * <p>{@code idempotencyKey} identifies the committed change that caused it — a listing id plus
+     * its new status, say — so re-running a transition mails once. Never throws: a mail failure
+     * must not roll back the listing change that triggered it.
+     */
+    public void sendEmail(String toEmail, String subject, String templateName,
+                          java.util.Map<String, String> variables, String idempotencyKey) {
         try {
             String htmlBody = renderTemplate(templateName, variables);
 
@@ -141,9 +224,13 @@ public class UserServiceClient {
             payload.put("toEmail", toEmail);
             payload.put("subject", subject);
             payload.put("htmlBody", htmlBody);
+            payload.put("templateName", templateName);
+            if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                payload.put("idempotencyKey", idempotencyKey);
+            }
 
             restTemplate.postForObject(userServiceUrl + "/internal/users/email/send", payload, Void.class);
-            log.info("Successfully sent internal HTML email request for template: {}", templateName);
+            log.info("Queued internal HTML email for template {} (key={})", templateName, idempotencyKey);
         } catch (Exception e) {
             log.error("Failed to render/send internal email request for template {}: {}", templateName, e.getMessage());
         }

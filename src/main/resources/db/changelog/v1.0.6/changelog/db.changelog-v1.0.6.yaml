@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260925-create-faqs-table
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/009_create_faqs.sql
+            relativeToChangelogFile: true

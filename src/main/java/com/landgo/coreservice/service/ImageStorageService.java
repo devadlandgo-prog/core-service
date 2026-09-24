@@ -22,6 +22,18 @@ public interface ImageStorageService {
     PresignedUrlResponse generatePresignedReadUrl(String fileKey, int expiryMinutes);
 
     /**
+     * Converts a stored media reference into a URL a client can load right now.
+     *
+     * <p>The bucket is private, so both a bare key and an unsigned bucket URL are unloadable;
+     * either is re-signed. External URLs are returned unchanged.
+     *
+     * @param stored a bare S3 key, a bucket URL, or an external URL; may be {@code null}
+     * @param expiryMinutes how long the signed URL should be valid (1–720 minutes)
+     * @return a loadable URL, or {@code null} when {@code stored} was blank
+     */
+    String toViewableUrl(String stored, int expiryMinutes);
+
+    /**
      * Deletes an image from the storage.
      * @param fileKey the exact key of the file in the bucket
      */

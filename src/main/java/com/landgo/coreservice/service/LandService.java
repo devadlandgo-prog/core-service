@@ -44,22 +44,34 @@ public class LandService {
     private final UserServiceClient userServiceClient;
     private final LandMapper landMapper;
     private final com.landgo.coreservice.repository.ListingDraftRepository draftRepository;
+    private final ImageStorageService imageStorageService;
+
+    /**
+     * Lifetime of the signed photo and document URLs returned with a listing.
+     *
+     * <p>Twelve hours: long enough that a browsing session never has images expire underneath it,
+     * short enough that a copied URL is not a permanent grant on a private bucket.
+     */
+    private static final int LISTING_MEDIA_URL_MINUTES = 12 * 60;
+
+    @org.springframework.beans.factory.annotation.Value("${app.web.my-listings-url:https://landgo.ca/my-listings}")
+    private String myListingsUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${app.web.listing-base-url:https://landgo.ca/listings}")
+    private String publicListingBaseUrl;
 
     @Transactional
     public LandResponse createLand(LandCreateRequest request, UUID vendorId) {
         log.debug("Creating land for vendorId: {}", vendorId);
 
-        // Check maxListings limit based on subscription
-        Integer maxListings = userServiceClient.getUserMaxListings(vendorId);
-        if (maxListings != null) {
-            long currentListingCount = landRepository.countAllByVendorIdAndDeletedFalse(vendorId);
-            long currentDraftCount = draftRepository.countByOwnerIdAndStatusAndDeletedFalse(vendorId, com.landgo.coreservice.enums.DraftStatus.IN_PROGRESS);
-            if (currentListingCount + currentDraftCount >= maxListings) {
-                throw new com.landgo.coreservice.exception.BadRequestException(
-                    String.format("You have reached your listing slot limit (%d). Please choose a plan to list more land.", maxListings),
-                    "SLOT_LIMIT_REACHED"
-                );
-            }
+        // Posting a listing costs one credit. Checked here, before any work, so a user with no
+        // credits gets a clear message rather than a listing that fails to publish later.
+        UserServiceClient.ListingCredits credits = userServiceClient.getListingCredits(vendorId);
+        if (credits != null && credits.available() <= 0) {
+            throw new com.landgo.coreservice.exception.BadRequestException(
+                    "You have no listing credits left. Buy a land listing package to post another "
+                            + "listing — credits never expire.",
+                    "NO_LISTING_CREDITS");
         }
 
         // MLS Validation logic
@@ -81,17 +93,14 @@ public class LandService {
         land.setInquiryCount(0);
         Land saved = landRepository.save(land);
         log.debug("Land created with id: {}", saved.getId());
-        try {
-            UserResponse user = userServiceClient.getUserById(vendorId);
-            if (user != null) {
-                java.util.Map<String, String> vars = new java.util.HashMap<>();
-                vars.put("User", user.getFullName());
-                vars.put("listingTitle", getListingTitle(saved));
-                userServiceClient.sendEmail(user.getEmail(), "LandGo - Listing Submitted", "ListingSubmitted", vars);
-            }
-        } catch (Exception e) {
-            log.error("Failed to send listing submitted email for landId: {}", saved.getId(), e);
-        }
+
+        // Spend the credit against the saved listing id, so the ledger records which listing it
+        // paid for and a retried submission of the same listing cannot spend twice. Deleting,
+        // rejecting or expiring the listing does not give the credit back — an admin reversal is
+        // the only route, and it is audited.
+        userServiceClient.consumeListingCredit(vendorId, saved.getId(), "listing.create:" + saved.getId());
+
+        sendListingStatusEmail(saved, LandStatus.PENDING_APPROVAL, null);
         return getLandResponseWithFavorite(saved, vendorId);
     }
 
@@ -289,6 +298,19 @@ public class LandService {
 
     @Transactional
     public LandResponse updateLandStatus(UUID id, LandStatus status, UUID userId, boolean isAdmin) {
+        return updateLandStatus(id, status, userId, isAdmin, null);
+    }
+
+    /**
+     * Changes a listing's status and notifies the owner.
+     *
+     * @param rejectionReason reviewer's reason, included verbatim in the rejection email. A
+     *                        rejection with no actionable reason leaves the owner with nothing to
+     *                        fix, so a fallback is used rather than sending an empty one.
+     */
+    @Transactional
+    public LandResponse updateLandStatus(UUID id, LandStatus status, UUID userId, boolean isAdmin,
+                                         String rejectionReason) {
         Land land = landRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Land", "id", id));
         
@@ -305,22 +327,7 @@ public class LandService {
         land.setStatus(status);
         Land saved = landRepository.save(land);
         if (oldStatus != status) {
-            try {
-                UserResponse user = userServiceClient.getUserById(saved.getVendorId());
-                if (user != null) {
-                    java.util.Map<String, String> vars = new java.util.HashMap<>();
-                    vars.put("User", user.getFullName());
-                    vars.put("listingTitle", getListingTitle(saved));
-                    if (status == LandStatus.ACTIVE) {
-                        userServiceClient.sendEmail(user.getEmail(), "LandGo - Listing Approved", "ListingApproved", vars);
-                    } else if (status == LandStatus.REJECTED) {
-                        vars.put("rejectionReason", "Listing does not meet our quality guidelines.");
-                        userServiceClient.sendEmail(user.getEmail(), "LandGo - Listing Rejected", "ListingRejected", vars);
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Failed to send listing status change email for landId: {} to status: {}", saved.getId(), status, e);
-            }
+            sendListingStatusEmail(saved, status, rejectionReason);
         }
         return getLandResponseWithFavorite(saved, userId);
     }
@@ -345,8 +352,22 @@ public class LandService {
             request.setMlsMobileNumber(null);
         }
 
+        // Editing a rejected listing is a resubmission: it goes back into review and the owner is
+        // told, rather than silently staying rejected while the owner believes they have fixed it.
+        boolean resubmitted = land.getStatus() == LandStatus.REJECTED && !isAdmin;
+        if (resubmitted) {
+            land.setStatus(LandStatus.PENDING_APPROVAL);
+        }
+
         landMapper.updateEntity(request, land);
         Land saved = landRepository.save(land);
+
+        if (resubmitted) {
+            // Keyed on the update timestamp so each genuine resubmission mails, while a retry of
+            // the same save does not.
+            sendListingStatusEmail(saved, LandStatus.PENDING_APPROVAL, null,
+                    "listing.resubmitted:" + saved.getId() + ":" + saved.getUpdatedAt());
+        }
         return getLandResponseWithFavorite(saved, userId);
     }
 
@@ -397,6 +418,7 @@ public class LandService {
                     boolean isFavorited = favoriteRepository.findByUserIdAndLandId(userId, land.getId()).isPresent();
                     LandResponse response = landMapper.toResponse(land);
                     response.setFavorited(isFavorited);
+                    signListingMedia(response);
                     return response;
                 })
                 .collect(Collectors.toList());
@@ -446,7 +468,10 @@ public class LandService {
         }
 
         java.util.Map<String, String> newPhoto = new java.util.HashMap<>();
-        newPhoto.put("url", "https://" + System.getenv("AWS_S3_IMAGES_BUCKET") + ".s3." + System.getenv("AWS_REGION") + ".amazonaws.com/" + request.getFileKey());
+        // Only the key is stored. The previous code assembled a bucket URL from raw environment
+        // variables — which produced "https://null.s3.null.amazonaws.com/..." wherever those were
+        // unset, and a permanent 403 where they were set, because the bucket is private. The URL
+        // clients use is signed at read time in signListingMedia().
         newPhoto.put("fileKey", request.getFileKey());
         newPhoto.put("fileName", request.getFileName());
         newPhoto.put("isPrimary", String.valueOf(request.isPrimary()));
@@ -491,7 +516,7 @@ public class LandService {
         }
 
         java.util.Map<String, String> newDoc = new java.util.HashMap<>();
-        newDoc.put("url", "https://" + System.getenv("AWS_S3_IMAGES_BUCKET") + ".s3." + System.getenv("AWS_REGION") + ".amazonaws.com/" + request.getFileKey());
+        // Key only — see addImageMetadata. Signed at read time.
         newDoc.put("fileKey", request.getFileKey());
         newDoc.put("fileName", request.getFileName());
         newDoc.put("uploadedAt", java.time.LocalDateTime.now().toString());
@@ -548,12 +573,41 @@ public class LandService {
         return responses;
     }
 
+    /**
+     * Replaces every stored photo and document reference with a signed, loadable URL.
+     *
+     * <p>Listing media lives in a private bucket. Rows written before this change hold an
+     * unsigned bucket URL that answers 403; rows written since hold only a key. Both are handled,
+     * so historical listings display without a data migration.
+     */
+    private void signListingMedia(LandResponse response) {
+        if (response == null) return;
+        signMediaEntries(response.getPhotos());
+        signMediaEntries(response.getDocuments());
+    }
+
+    private void signMediaEntries(List<Map<String, String>> entries) {
+        if (entries == null) return;
+        for (Map<String, String> entry : entries) {
+            if (entry == null) continue;
+            String reference = entry.get("fileKey");
+            if (reference == null || reference.isBlank()) {
+                reference = entry.get("url");
+            }
+            String signed = imageStorageService.toViewableUrl(reference, LISTING_MEDIA_URL_MINUTES);
+            if (signed != null) {
+                entry.put("url", signed);
+            }
+        }
+    }
+
     private LandResponse getLandResponseWithFavorite(Land land, UUID currentUserId) {
         boolean isFavorited = currentUserId != null && 
                 favoriteRepository.findByUserIdAndLandId(currentUserId, land.getId()).isPresent();
         
         LandResponse response = landMapper.toResponse(land);
         response.setFavorited(isFavorited);
+        signListingMedia(response);
         
         VendorResponse vendor = userServiceClient.getVendorProfileForUser(land.getVendorId());
         if (vendor != null) {
@@ -577,6 +631,7 @@ public class LandService {
                             favoriteRepository.findByUserIdAndLandId(userId, land.getId()).isPresent();
                     LandResponse response = landMapper.toResponse(land);
                     response.setFavorited(isFavorited);
+                    signListingMedia(response);
                     return response;
                 })
                 .collect(Collectors.toList());
@@ -589,24 +644,97 @@ public class LandService {
                 .first(lands.isFirst()).last(lands.isLast()).build();
     }
 
+    /**
+     * What the user has posted, and what their credit balance allows.
+     *
+     * <p>The entitlement is the aggregated credit balance from payment-service — every package
+     * ever bought, minus every credit spent — not a per-plan cap. The listing counts here are
+     * descriptive; they are deliberately not used to compute what is left, because deleting a
+     * listing does not return its credit and counting live listings would imply that it does.
+     */
     public Map<String, Object> getSlotUsage(UUID userId) {
         long draft = draftRepository.countByOwnerIdAndStatusAndDeletedFalse(userId, com.landgo.coreservice.enums.DraftStatus.IN_PROGRESS);
         long pending = landRepository.countByVendorIdAndStatusAndDeletedFalse(userId, LandStatus.PENDING_APPROVAL);
         long live = landRepository.countActiveListingsByVendorId(userId);
         long total = landRepository.countAllByVendorIdAndDeletedFalse(userId) + draft;
-        
-        Integer maxListings = userServiceClient.getUserMaxListings(userId);
-        int maxLimit = maxListings == null ? 0 : maxListings;
-        long remainingSlots = Math.max(0, (long) maxLimit - total);
-        
+
+        UserServiceClient.ListingCredits credits = userServiceClient.getListingCredits(userId);
+        int purchased = credits != null ? credits.purchased() : 0;
+        int used = credits != null ? credits.used() : 0;
+        int available = credits != null ? credits.available() : 0;
+
         Map<String, Object> usage = new LinkedHashMap<>();
         usage.put("draft", draft);
         usage.put("pending", pending);
         usage.put("live", live);
         usage.put("total", total);
-        usage.put("maxListings", maxLimit);
-        usage.put("remainingSlots", remainingSlots);
+
+        usage.put("creditsPurchased", purchased);
+        usage.put("creditsUsed", used);
+        usage.put("creditsAvailable", available);
+        usage.put("creditsNeverExpire", true);
+
+        // Legacy names, kept so existing clients keep rendering. Both now report the credit
+        // balance rather than a plan tier's allowance.
+        usage.put("maxListings", purchased);
+        usage.put("remainingSlots", available);
         return usage;
+    }
+
+    /**
+     * Notifies the listing owner that their listing's status changed.
+     *
+     * <p>Keyed on the listing and the status it moved to, so re-running a transition — an admin
+     * re-saving the same decision, or a retried request — mails once. Failures are logged and
+     * swallowed: the status change is already committed and must not be rolled back by email.
+     */
+    private void sendListingStatusEmail(Land land, LandStatus status, String rejectionReason) {
+        sendListingStatusEmail(land, status, rejectionReason, null);
+    }
+
+    private void sendListingStatusEmail(Land land, LandStatus status, String rejectionReason,
+                                        String idempotencyKey) {
+        try {
+            UserResponse user = userServiceClient.getUserById(land.getVendorId());
+            if (user == null || user.getEmail() == null) {
+                log.warn("No email on file for vendor {} — skipping listing {} notification",
+                        land.getVendorId(), status);
+                return;
+            }
+
+            Map<String, String> vars = new HashMap<>();
+            vars.put("User", user.getFullName());
+            vars.put("listingTitle", getListingTitle(land));
+            vars.put("listingId", land.getId().toString());
+            vars.put("listingAddress", land.getAddress() != null ? land.getAddress() : "");
+            vars.put("myListingsUrl", myListingsUrl);
+            vars.put("listingUrl", publicListingBaseUrl + "/" + land.getId());
+            vars.put("editUrl", myListingsUrl);
+
+            String key = idempotencyKey != null && !idempotencyKey.isBlank()
+                    ? idempotencyKey
+                    : "listing." + status.name().toLowerCase() + ":" + land.getId();
+
+            switch (status) {
+                case PENDING_APPROVAL -> userServiceClient.sendEmail(user.getEmail(),
+                        "LandGo - Listing submitted for review", "ListingSubmitted", vars, key);
+                case ACTIVE -> userServiceClient.sendEmail(user.getEmail(),
+                        "LandGo - Your listing is live", "ListingApproved", vars, key);
+                case REJECTED -> {
+                    vars.put("rejectionReason", rejectionReason != null && !rejectionReason.isBlank()
+                            ? rejectionReason
+                            : "Your listing does not yet meet our listing guidelines. "
+                                    + "Please review the details and resubmit.");
+                    userServiceClient.sendEmail(user.getEmail(),
+                            "LandGo - Changes requested on your listing", "ListingRejected", vars, key);
+                }
+                // SOLD and EXPIRED have no owner-facing template yet; nothing is sent rather than
+                // reusing a template that would say the wrong thing.
+                default -> log.debug("No owner email defined for listing status {}", status);
+            }
+        } catch (Exception e) {
+            log.error("Failed to send listing {} email for landId: {}", status, land.getId(), e);
+        }
     }
 
     private String getListingTitle(Land land) {
