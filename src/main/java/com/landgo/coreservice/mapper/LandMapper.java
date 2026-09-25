@@ -5,7 +5,6 @@ import com.landgo.coreservice.dto.request.LandCreateRequest;
 import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.entity.Land;
 import com.landgo.coreservice.service.ImageStorageService;
-import com.landgo.coreservice.dto.response.PresignedUrlResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import java.util.*;
