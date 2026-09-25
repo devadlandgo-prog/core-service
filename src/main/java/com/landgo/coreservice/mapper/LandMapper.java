@@ -183,6 +183,22 @@ public class LandMapper {
         }
     }
 
+    /**
+     * Lifetime of the signed photo and document URLs returned with a listing.
+     *
+     * <p>Twelve hours: long enough that a browsing session does not have images expire
+     * underneath it, short enough that a copied URL is not a lasting grant on a private bucket.
+     */
+    private static final int MEDIA_URL_MINUTES = 12 * 60;
+
+    /**
+     * Replaces every stored media reference with a signed, loadable URL.
+     *
+     * <p>The single place listing media is signed. The bucket is private, so a bare key and an
+     * unsigned bucket URL are both unloadable — an unsigned URL answers 403 with an XML body,
+     * which browsers and image optimisers report as a broken image rather than a permissions
+     * problem.
+     */
     private List<Map<String, String>> signMediaUrls(List<Map<String, String>> mediaList) {
         if (mediaList == null) return null;
         
@@ -203,14 +219,22 @@ public class LandMapper {
                     }
                 }
             }
-            if (fileKey != null && !fileKey.isBlank()) {
+            // Sign whatever reference we have. toViewableUrl handles a bare key, a bucket
+            // URL under any prefix, and leaves a genuinely external URL alone — the older
+            // "uploads/" substring search above only recognised one prefix, so listing
+            // photos stored under listings/{id}/images/ fell through it.
+            String reference = (fileKey != null && !fileKey.isBlank()) ? fileKey : copy.get("url");
+            if (reference != null && !reference.isBlank()) {
                 try {
-                    // Generate a 60-minute pre-signed read URL on the fly
-                    PresignedUrlResponse presigned = imageStorageService.generatePresignedReadUrl(fileKey, 60);
-                    copy.put("url", presigned.getUrl());
-                    copy.put("imageUrl", presigned.getUrl());
+                    String signed = imageStorageService.toViewableUrl(reference, MEDIA_URL_MINUTES);
+                    if (signed != null) {
+                        // Both fields, always together. They used to be set in one place and
+                        // overwritten in another, leaving imageUrl expiring hours before url.
+                        copy.put("url", signed);
+                        copy.put("imageUrl", signed);
+                    }
                 } catch (Exception e) {
-                    // Fallback to original static URL if signing fails
+                    // Keep the stored value rather than dropping the media entirely.
                 }
             }
             signedList.add(copy);

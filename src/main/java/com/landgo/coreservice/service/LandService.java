@@ -44,15 +44,6 @@ public class LandService {
     private final UserServiceClient userServiceClient;
     private final LandMapper landMapper;
     private final com.landgo.coreservice.repository.ListingDraftRepository draftRepository;
-    private final ImageStorageService imageStorageService;
-
-    /**
-     * Lifetime of the signed photo and document URLs returned with a listing.
-     *
-     * <p>Twelve hours: long enough that a browsing session never has images expire underneath it,
-     * short enough that a copied URL is not a permanent grant on a private bucket.
-     */
-    private static final int LISTING_MEDIA_URL_MINUTES = 12 * 60;
 
     @org.springframework.beans.factory.annotation.Value("${app.web.my-listings-url:https://landgo.ca/my-listings}")
     private String myListingsUrl;
@@ -418,7 +409,6 @@ public class LandService {
                     boolean isFavorited = favoriteRepository.findByUserIdAndLandId(userId, land.getId()).isPresent();
                     LandResponse response = landMapper.toResponse(land);
                     response.setFavorited(isFavorited);
-                    signListingMedia(response);
                     return response;
                 })
                 .collect(Collectors.toList());
@@ -471,7 +461,7 @@ public class LandService {
         // Only the key is stored. The previous code assembled a bucket URL from raw environment
         // variables — which produced "https://null.s3.null.amazonaws.com/..." wherever those were
         // unset, and a permanent 403 where they were set, because the bucket is private. The URL
-        // clients use is signed at read time in signListingMedia().
+        // clients use is signed at read time by LandMapper.signMediaUrls().
         newPhoto.put("fileKey", request.getFileKey());
         newPhoto.put("fileName", request.getFileName());
         newPhoto.put("isPrimary", String.valueOf(request.isPrimary()));
@@ -573,41 +563,12 @@ public class LandService {
         return responses;
     }
 
-    /**
-     * Replaces every stored photo and document reference with a signed, loadable URL.
-     *
-     * <p>Listing media lives in a private bucket. Rows written before this change hold an
-     * unsigned bucket URL that answers 403; rows written since hold only a key. Both are handled,
-     * so historical listings display without a data migration.
-     */
-    private void signListingMedia(LandResponse response) {
-        if (response == null) return;
-        signMediaEntries(response.getPhotos());
-        signMediaEntries(response.getDocuments());
-    }
-
-    private void signMediaEntries(List<Map<String, String>> entries) {
-        if (entries == null) return;
-        for (Map<String, String> entry : entries) {
-            if (entry == null) continue;
-            String reference = entry.get("fileKey");
-            if (reference == null || reference.isBlank()) {
-                reference = entry.get("url");
-            }
-            String signed = imageStorageService.toViewableUrl(reference, LISTING_MEDIA_URL_MINUTES);
-            if (signed != null) {
-                entry.put("url", signed);
-            }
-        }
-    }
-
     private LandResponse getLandResponseWithFavorite(Land land, UUID currentUserId) {
         boolean isFavorited = currentUserId != null && 
                 favoriteRepository.findByUserIdAndLandId(currentUserId, land.getId()).isPresent();
         
         LandResponse response = landMapper.toResponse(land);
         response.setFavorited(isFavorited);
-        signListingMedia(response);
         
         VendorResponse vendor = userServiceClient.getVendorProfileForUser(land.getVendorId());
         if (vendor != null) {
@@ -631,7 +592,6 @@ public class LandService {
                             favoriteRepository.findByUserIdAndLandId(userId, land.getId()).isPresent();
                     LandResponse response = landMapper.toResponse(land);
                     response.setFavorited(isFavorited);
-                    signListingMedia(response);
                     return response;
                 })
                 .collect(Collectors.toList());
