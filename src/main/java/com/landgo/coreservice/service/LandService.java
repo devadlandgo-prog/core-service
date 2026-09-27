@@ -51,6 +51,20 @@ public class LandService {
     @org.springframework.beans.factory.annotation.Value("${app.web.listing-base-url:https://landgo.ca/listings}")
     private String publicListingBaseUrl;
 
+    // Footer values the shared email layout expects. Configured rather than hardcoded so a dev
+    // deployment does not mail production links.
+    @org.springframework.beans.factory.annotation.Value("${app.web.website-url:https://landgo.ca}")
+    private String websiteUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${app.web.help-url:https://landgo.ca/help}")
+    private String helpUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${app.mail.support-email:support@landgo.ca}")
+    private String supportEmail;
+
+    @org.springframework.beans.factory.annotation.Value("${app.mail.company-address:LandGo, Ontario, Canada}")
+    private String companyAddress;
+
     @Transactional
     public LandResponse createLand(LandCreateRequest request, UUID vendorId) {
         log.debug("Creating land for vendorId: {}", vendorId);
@@ -668,6 +682,10 @@ public class LandService {
             vars.put("listingId", land.getId().toString());
             vars.put("listingAddress", land.getAddress() != null ? land.getAddress() : "");
             vars.put("myListingsUrl", myListingsUrl);
+            vars.put("websiteUrl", websiteUrl);
+            vars.put("helpUrl", helpUrl);
+            vars.put("supportEmail", supportEmail);
+            vars.put("companyAddress", companyAddress);
             vars.put("listingUrl", publicListingBaseUrl + "/" + land.getId());
             vars.put("editUrl", myListingsUrl);
 
@@ -688,8 +706,14 @@ public class LandService {
                     userServiceClient.sendEmail(user.getEmail(),
                             "LandGo - Changes requested on your listing", "ListingRejected", vars, key);
                 }
-                // SOLD and EXPIRED have no owner-facing template yet; nothing is sent rather than
-                // reusing a template that would say the wrong thing.
+                case EXPIRED -> {
+                    vars.put("expiredAt", java.time.LocalDate.now().toString());
+                    vars.put("renewUrl", myListingsUrl);
+                    userServiceClient.sendEmail(user.getEmail(),
+                            "LandGo - Your listing has expired", "ListingExpired", vars, key);
+                }
+                // SOLD is an outcome the owner initiated, so there is nothing to tell them that
+                // they do not already know. No template, and none needed.
                 default -> log.debug("No owner email defined for listing status {}", status);
             }
         } catch (Exception e) {

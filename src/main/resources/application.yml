@@ -43,8 +43,12 @@ app:
   web:
     my-listings-url: ${WEB_MY_LISTINGS_URL:https://landgo.ca/my-listings}
     listing-base-url: ${WEB_LISTING_BASE_URL:https://landgo.ca/listings}
+    website-url: ${WEB_SITE_URL:https://landgo.ca}
+    help-url: ${WEB_HELP_URL:https://landgo.ca/help}
   mail:
     logo-url: ${MAIL_LOGO_URL:https://landgo.app/logo_with_tagline.png}
+    support-email: ${MAIL_SUPPORT_EMAIL:support@landgo.ca}
+    company-address: ${MAIL_COMPANY_ADDRESS:LandGo, Ontario, Canada}
 
 aws:
   region: ${AWS_REGION:ca-central-1}
