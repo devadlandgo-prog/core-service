@@ -218,45 +218,26 @@ public class UserServiceClient {
     public void sendEmail(String toEmail, String subject, String templateName,
                           java.util.Map<String, String> variables, String idempotencyKey) {
         try {
-            String htmlBody = renderTemplate(templateName, variables);
-
+            // The template name and its variables, not rendered HTML. user-service owns every
+            // template and renders them; sending the finished HTML here meant a 6-9 KB request
+            // body, and these calls go out to https://user.<domain> and back in through the
+            // public ALB, where the WAF's SizeRestrictions_BODY rule rejects anything over 8 KB
+            // with a bare 403. Every transactional email from this service was being dropped
+            // there. A variables payload is around a kilobyte and cannot drift into that limit.
             java.util.Map<String, Object> payload = new java.util.HashMap<>();
             payload.put("toEmail", toEmail);
             payload.put("subject", subject);
-            payload.put("htmlBody", htmlBody);
+            payload.put("variables", variables);
             payload.put("templateName", templateName);
             if (idempotencyKey != null && !idempotencyKey.isBlank()) {
                 payload.put("idempotencyKey", idempotencyKey);
             }
 
             restTemplate.postForObject(userServiceUrl + "/internal/users/email/send", payload, Void.class);
-            log.info("Queued internal HTML email for template {} (key={})", templateName, idempotencyKey);
+            log.info("Queued {} email (key={})", templateName, idempotencyKey);
         } catch (Exception e) {
-            log.error("Failed to render/send internal email request for template {}: {}", templateName, e.getMessage());
+            log.error("Failed to queue {} email (key={}): {}", templateName, idempotencyKey, e.getMessage());
         }
     }
 
-    private String renderTemplate(String templateName, java.util.Map<String, String> variables) throws java.io.IOException {
-        String templatePath = "email-templates/" + templateName + ".html";
-        org.springframework.core.io.ClassPathResource resource = new org.springframework.core.io.ClassPathResource(templatePath);
-        if (!resource.exists()) {
-            throw new IllegalArgumentException("Template file not found: " + templatePath);
-        }
-        String template = new String(resource.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-
-        // Inject logoUrl
-        template = template.replace("/static/icon.svg", logoUrl);
-        template = template.replace("{{logoUrl}}", logoUrl);
-
-        if (variables != null) {
-            for (java.util.Map.Entry<String, String> entry : variables.entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue() != null ? entry.getValue() : "";
-                template = template.replace("<!-- -->" + key + "<!-- -->", value);
-                template = template.replace("{{" + key + "}}", value);
-                template = template.replace("${" + key + "}", value);
-            }
-        }
-        return template;
-    }
 }
