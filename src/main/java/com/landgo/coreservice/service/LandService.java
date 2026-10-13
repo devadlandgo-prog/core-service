@@ -721,13 +721,25 @@ public class LandService {
         }
     }
 
+    /**
+     * How a listing is named in an email to its owner.
+     *
+     * <p>Falls back to the address rather than a stock phrase. An owner with several listings
+     * cannot tell which one an email is about when every one of them is called "Beautiful Land
+     * Listing", and the address is never null - it is the one thing every listing has.
+     */
     private String getListingTitle(Land land) {
         if (land.getProjectSpecification() != null) {
             Object rawTitle = land.getProjectSpecification().get("title");
-            if (rawTitle != null) {
+            if (rawTitle != null && !rawTitle.toString().isBlank()) {
                 return rawTitle.toString();
             }
         }
-        return "Beautiful Land Listing";
+        if (land.getAddress() != null && !land.getAddress().isBlank()) {
+            return land.getCity() != null && !land.getCity().isBlank()
+                    ? land.getAddress() + ", " + land.getCity()
+                    : land.getAddress();
+        }
+        return "your listing";
     }
 }

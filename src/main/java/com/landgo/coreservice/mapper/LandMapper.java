@@ -97,7 +97,15 @@ public class LandMapper {
         }
         if (request.getProjectSpecification() != null) {
             @SuppressWarnings("unchecked") Map<String, Object> specMap = objectMapper.convertValue(request.getProjectSpecification(), Map.class);
-            specMap.values().removeIf(Objects::isNull); land.setProjectSpecification(specMap);
+            specMap.values().removeIf(Objects::isNull);
+            // The listing has no title column; it lives in this map. The branch below carries it
+            // across, but this one dropped it, so any client that sent a projectSpecification -
+            // which the wizard always does - lost the name the seller typed. Nothing failed: the
+            // listing saved, and every email about it then said "Beautiful Land Listing".
+            if (request.getTitle() != null && !request.getTitle().isBlank()) {
+                specMap.put("title", request.getTitle());
+            }
+            land.setProjectSpecification(specMap);
         } else {
             Map<String, Object> specMap = new LinkedHashMap<>();
             if (request.getUtilities() != null) specMap.put("utilities", request.getUtilities());
@@ -140,7 +148,15 @@ public class LandMapper {
         }
         if (request.getProjectSpecification() != null) {
             @SuppressWarnings("unchecked") Map<String, Object> specMap = objectMapper.convertValue(request.getProjectSpecification(), Map.class);
-            specMap.values().removeIf(Objects::isNull); land.setProjectSpecification(specMap);
+            specMap.values().removeIf(Objects::isNull);
+            // The listing has no title column; it lives in this map. The branch below carries it
+            // across, but this one dropped it, so any client that sent a projectSpecification -
+            // which the wizard always does - lost the name the seller typed. Nothing failed: the
+            // listing saved, and every email about it then said "Beautiful Land Listing".
+            if (request.getTitle() != null && !request.getTitle().isBlank()) {
+                specMap.put("title", request.getTitle());
+            }
+            land.setProjectSpecification(specMap);
         }
         if (request.getPricing() != null) {
             land.setAskingPrice(request.getPricing().getAskingPrice());
