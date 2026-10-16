@@ -9,6 +9,7 @@ import com.landgo.coreservice.enums.ListingType;
 import com.landgo.coreservice.enums.LandStatus;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
@@ -173,54 +174,63 @@ public class LandSpecification {
         };
     }
 
+    /**
+     * A {@code projectSpecification} field, lower-cased with spaces and hyphens as underscores, so a
+     * stored display label can be compared against a canonical token.
+     */
+    private static Expression<String> normalizedSpecField(jakarta.persistence.criteria.Root<Land> root,
+            CriteriaBuilder cb, String field) {
+        return cb.lower(cb.function("replace", String.class,
+                cb.function("replace", String.class,
+                        cb.function("jsonb_extract_path_text", String.class,
+                                root.get("projectSpecification"), cb.literal(field)),
+                        cb.literal(" "), cb.literal("_")),
+                cb.literal("-"), cb.literal("_")));
+    }
+
+    /**
+     * Land-use category.
+     *
+     * <p>Matched against {@code proposedUse} as well as {@code projectType} because the Site Plan
+     * Approval create step writes the category to {@code proposedUse} and leaves {@code projectType}
+     * unset - the response mapper already reads it that way, so a filter that looked only at
+     * {@code projectType} disagreed with the category the listing displays. Application labels that
+     * share the field on other stages ("Rezoning, Site Plan") match no category token, so widening
+     * the field list adds no false positives.
+     */
     public static Specification<Land> hasProjectTypes(java.util.List<ProjectType> projectTypes) {
         return (root, query, cb) -> {
             if (projectTypes == null || projectTypes.isEmpty()) return cb.conjunction();
-            CriteriaBuilder.In<String> inClause = cb.in(
-                    cb.lower(cb.function("replace", String.class,
-                            cb.function("replace", String.class,
-                                    cb.function("jsonb_extract_path_text", String.class,
-                                            root.get("projectSpecification"), cb.literal("projectType")),
-                                    cb.literal(" "), cb.literal("_")),
-                            cb.literal("-"), cb.literal("_"))));
-            for (ProjectType pt : projectTypes) {
-                inClause.value(pt.name().toLowerCase());
-            }
-            return inClause;
+            java.util.List<String> tokens = projectTypes.stream()
+                    .map(pt -> pt.name().toLowerCase())
+                    .toList();
+            return cb.or(
+                    normalizedSpecField(root, cb, "projectType").in(tokens),
+                    normalizedSpecField(root, cb, "proposedUse").in(tokens));
         };
     }
 
     public static Specification<Land> hasBuildingTypes(java.util.List<BuildingType> buildingTypes) {
         return (root, query, cb) -> {
             if (buildingTypes == null || buildingTypes.isEmpty()) return cb.conjunction();
-            CriteriaBuilder.In<String> inClause = cb.in(
-                    cb.lower(cb.function("replace", String.class,
-                            cb.function("replace", String.class,
-                                    cb.function("jsonb_extract_path_text", String.class,
-                                            root.get("projectSpecification"), cb.literal("buildingType")),
-                                    cb.literal(" "), cb.literal("_")),
-                            cb.literal("-"), cb.literal("_"))));
-            for (BuildingType bt : buildingTypes) {
-                inClause.value(bt.name().toLowerCase());
-            }
-            return inClause;
+            // matchTokens() rather than name(): the create screens store display labels, so the rows
+            // say "Detached" where the filter asks for single_family.
+            java.util.Set<String> tokens = new java.util.LinkedHashSet<>();
+            buildingTypes.forEach(bt -> tokens.addAll(bt.matchTokens()));
+            return normalizedSpecField(root, cb, "buildingType").in(tokens);
         };
     }
 
     public static Specification<Land> hasListingTypes(java.util.List<ListingType> listingTypes) {
         return (root, query, cb) -> {
             if (listingTypes == null || listingTypes.isEmpty()) return cb.conjunction();
-            CriteriaBuilder.In<String> inClause = cb.in(
-                    cb.lower(cb.function("replace", String.class,
-                            cb.function("replace", String.class,
-                                    cb.function("jsonb_extract_path_text", String.class,
-                                            root.get("projectSpecification"), cb.literal("listingType")),
-                                    cb.literal(" "), cb.literal("_")),
-                            cb.literal("-"), cb.literal("_"))));
-            for (ListingType lt : listingTypes) {
-                inClause.value(lt.name().toLowerCase());
-            }
-            return inClause;
+            java.util.Set<String> tokens = new java.util.LinkedHashSet<>();
+            listingTypes.forEach(lt -> tokens.addAll(lt.matchTokens()));
+            // sellingType too: create writes the transaction there ("Land Sale") and leaves
+            // listingType unset for every stage that has no transaction picker.
+            return cb.or(
+                    normalizedSpecField(root, cb, "listingType").in(tokens),
+                    normalizedSpecField(root, cb, "sellingType").in(tokens));
         };
     }
 
@@ -238,6 +248,29 @@ public class LandSpecification {
             
             // Should match AT LEAST ONE of the provided zoning types (OR)
             return cb.or(predicates);
+        };
+    }
+
+    /**
+     * Municipal zoning code search, e.g. {@code R1}, {@code RM4}.
+     *
+     * <p>Separate from {@link #hasZoningTypes} because a code and a category are different things:
+     * the zoning filter advertised "e.g. Residential, R1, Commercial" but sent everything as
+     * {@code zoningType}, where {@code R1} is not a valid category and the request failed outright.
+     * Codes are what creation actually collects, so they need a parameter of their own.
+     *
+     * <p>A prefix-ish contains match, since a row holds a comma-separated list of codes and callers
+     * type one.
+     */
+    public static Specification<Land> hasZoningCodes(java.util.List<String> zoningCodes) {
+        return (root, query, cb) -> {
+            if (zoningCodes == null || zoningCodes.isEmpty()) return cb.conjunction();
+            Predicate[] predicates = zoningCodes.stream()
+                    .filter(code -> code != null && !code.isBlank())
+                    .map(code -> cb.like(cb.lower(root.get("currentZoningCodes")),
+                            "%" + code.trim().toLowerCase() + "%"))
+                    .toArray(Predicate[]::new);
+            return predicates.length == 0 ? cb.conjunction() : cb.or(predicates);
         };
     }
 

@@ -147,6 +147,7 @@ public class LandService {
                                                BigDecimal minLotSize, BigDecimal maxLotSize, Boolean isFeatured, Boolean isHotDeal,
                                                List<ProjectType> projectTypes, List<BuildingType> buildingTypes, List<ZoningType> zoningTypes, List<ListingType> listingTypes,
                                                List<LandStatus> statuses, Integer forSaleSince, Integer soldSince,
+                                               List<String> zoningCodes,
                                                String sortBy, String sortDir,
                                                int page, int size, UUID userId) {
         
@@ -195,6 +196,7 @@ public class LandService {
         if (projectTypes != null && !projectTypes.isEmpty()) spec = spec.and(LandSpecification.hasProjectTypes(projectTypes));
         if (buildingTypes != null && !buildingTypes.isEmpty()) spec = spec.and(LandSpecification.hasBuildingTypes(buildingTypes));
         if (zoningTypes != null && !zoningTypes.isEmpty()) spec = spec.and(LandSpecification.hasZoningTypes(zoningTypes));
+        if (zoningCodes != null && !zoningCodes.isEmpty()) spec = spec.and(LandSpecification.hasZoningCodes(zoningCodes));
         if (listingTypes != null && !listingTypes.isEmpty()) spec = spec.and(LandSpecification.hasListingTypes(listingTypes));
         if (forSaleSince != null) spec = spec.and(LandSpecification.forSaleSince(forSaleSince));
 

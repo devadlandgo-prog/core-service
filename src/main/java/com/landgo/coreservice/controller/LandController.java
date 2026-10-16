@@ -136,7 +136,7 @@ public class LandController {
 
     @GetMapping("/filter")
     @Operation(summary = "Advanced filter for land listings",
-               description = "Highly flexible filtering by city/q, stage, price range, lot size, project/building/zoning/listing types, and for-sale duration. Supports sorting by vendor rating, reviews, and experience.")
+               description = "Highly flexible filtering by city/q, stage, price range, lot size, project/building/zoning/listing types, and for-sale duration. zoningType takes a zoning category (RESIDENTIAL, COMMERCIAL, ...); zoningCode takes a municipal code such as R1 or RM4, which is what creation collects. Supports sorting by vendor rating, reviews, and experience.")
     public ResponseEntity<ApiResponse<PageResponse<LandResponse>>> filterLands(
             @CurrentUser UUID userId,
             @RequestParam(required = false) String city,
@@ -155,6 +155,7 @@ public class LandController {
             @RequestParam(required = false) List<String> status,
             @RequestParam(required = false) Integer forSaleSince,
             @RequestParam(required = false) Integer soldSince,
+            @RequestParam(required = false) List<String> zoningCode,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDir,
             @RequestParam(defaultValue = "0") int page,
@@ -170,7 +171,7 @@ public class LandController {
         PageResponse<LandResponse> lands = landService.filterLands(
                 city, q, parsedStages, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
                 parsedProjectTypes, parsedBuildingTypes, parsedZoningTypes, parsedListingTypes,
-                parsedStatuses, forSaleSince, soldSince,
+                parsedStatuses, forSaleSince, soldSince, zoningCode,
                 sortBy, sortDir, page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }
