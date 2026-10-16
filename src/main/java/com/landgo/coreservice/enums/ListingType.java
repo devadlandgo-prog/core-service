@@ -14,9 +14,13 @@ import java.util.Set;
  * types and deliberately have no alias, because whether they become their own field, their own
  * enum values, or neither is an open product decision. Mapping them onto SALE would quietly
  * misfile them.
+ *
+ * <p>The bare {@code land} alias is not hypothetical: it is what the only listing in dev carrying a
+ * selling type actually stores, so some client wrote the slug rather than the label and
+ * {@code listingType=sale} matched nothing without it.
  */
 public enum ListingType {
-    SALE("land_sale", "for_sale"),
+    SALE("land_sale", "land", "for_sale"),
     LEASE("for_lease"),
     RENT("for_rent"),
     AUCTION;
