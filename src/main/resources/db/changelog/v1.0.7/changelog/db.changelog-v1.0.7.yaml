@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: core-v1-0-7-ddl-lot-size-acres
+      author: backend-team
+      failOnError: true
+      changes:
+        - sqlFile:
+            path: ../ddl/010_lot_size_acres.sql
+            relativeToChangelogFile: true

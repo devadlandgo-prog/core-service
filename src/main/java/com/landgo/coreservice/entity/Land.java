@@ -28,6 +28,12 @@ public class Land extends BaseEntity {
     @Column(name = "postal_code", nullable = false, length = 20) private String postalCode;
     @Column(name = "lot_size", nullable = false, precision = 15, scale = 2) private BigDecimal lotSize;
     @Column(name = "lot_unit", nullable = false, length = 20) private String lotUnit;
+    /**
+     * lot_size converted to acres by the database, so size filters can compare listings entered in
+     * different units. Generated: read it, never write it.
+     */
+    @Column(name = "lot_size_acres", insertable = false, updatable = false, precision = 20, scale = 6)
+    private BigDecimal lotSizeAcres;
     @Column(name = "frontage", length = 50) private String frontage;
     @Column(name = "depth", length = 50) private String depth;
     @Column(name = "current_zoning_codes") private String currentZoningCodes;
