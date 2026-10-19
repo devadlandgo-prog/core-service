@@ -1,6 +1,8 @@
 package com.landgo.coreservice.controller;
 
 import com.landgo.coreservice.dto.response.ApiResponse;
+import com.landgo.coreservice.enums.ProjectStage;
+import com.landgo.coreservice.enums.ProjectType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -65,12 +68,32 @@ public class LocationController {
                 .orElse(ResponseEntity.ok(ApiResponse.success(List.of())));
     }
 
+    /**
+     * Legacy combined filter options, aligned with the dedicated {@code /listings/filter-options/*}
+     * endpoints.
+     *
+     * <p>It used to answer with its own vocabulary and its own key names: four hardcoded property
+     * types, and stages reading "Raw Land", "Zoned", "Draft Plan Approved", "Site Plan Approved" -
+     * a set that never matched the five canonical stages and offered a "Zoned" that does not exist.
+     * Clients fall back to this endpoint when the dedicated ones fail, and mobile's fallback reads
+     * {@code projectTypes} and {@code stages}, which this did not return at all, so the fallback
+     * silently produced empty pickers.
+     *
+     * <p>Values now come from the same enums the filter accepts, so a selection made here is a
+     * token the filter will take. {@code propertyTypes} and {@code projectStages} are kept as
+     * aliases of the same lists rather than dropped, since an existing client may still read them.
+     */
     @GetMapping("/filter-options")
-    @Operation(summary = "Get location filter options", description = "Returns property types, project stages, and lot units for filter dropdowns.")
+    @Operation(summary = "Get location filter options",
+               description = "Legacy combined options. Returns the same canonical values as /listings/filter-options/*; projectTypes/stages are the current names, propertyTypes/projectStages are kept as aliases.")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getFilterOptions() {
+        List<String> projectTypes = Arrays.stream(ProjectType.values()).map(ProjectType::name).toList();
+        List<String> stages = Arrays.stream(ProjectStage.values()).map(ProjectStage::name).toList();
         return ResponseEntity.ok(ApiResponse.success(Map.of(
-                "propertyTypes", List.of("Residential", "Commercial", "Industrial", "Mixed Use"),
-                "projectStages", List.of("Raw Land", "Zoned", "Draft Plan Approved", "Site Plan Approved"),
+                "projectTypes", projectTypes,
+                "stages", stages,
+                "propertyTypes", projectTypes,
+                "projectStages", stages,
                 "lotUnits", List.of("SQFT", "ACRE", "HECTARE")
         )));
     }
