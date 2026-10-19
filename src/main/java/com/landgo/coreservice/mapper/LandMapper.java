@@ -5,6 +5,7 @@ import com.landgo.coreservice.dto.request.LandCreateRequest;
 import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.entity.Land;
 import com.landgo.coreservice.service.ImageStorageService;
+import com.landgo.coreservice.util.ProjectSpecificationNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import java.util.*;
@@ -105,7 +106,7 @@ public class LandMapper {
             if (request.getTitle() != null && !request.getTitle().isBlank()) {
                 specMap.put("title", request.getTitle());
             }
-            land.setProjectSpecification(specMap);
+            land.setProjectSpecification(ProjectSpecificationNormalizer.normalize(specMap));
         } else {
             Map<String, Object> specMap = new LinkedHashMap<>();
             if (request.getUtilities() != null) specMap.put("utilities", request.getUtilities());
@@ -156,7 +157,7 @@ public class LandMapper {
             if (request.getTitle() != null && !request.getTitle().isBlank()) {
                 specMap.put("title", request.getTitle());
             }
-            land.setProjectSpecification(specMap);
+            land.setProjectSpecification(ProjectSpecificationNormalizer.normalize(specMap));
         }
         if (request.getPricing() != null) {
             land.setAskingPrice(request.getPricing().getAskingPrice());

@@ -2,6 +2,8 @@ package com.landgo.coreservice.enums;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -53,5 +55,25 @@ public enum BuildingType {
         tokens.add(name().toLowerCase());
         tokens.addAll(legacyTokens);
         return tokens;
+    }
+
+    /**
+     * The one canonical type a submitted label denotes, for normalising a listing on write.
+     *
+     * <p>Empty when the label matches none - so an unrecognised value is stored as sent rather than
+     * guessed at - and equally when it matches more than one, which today means "Condo / Apartment"
+     * and its variants. Picking CONDO or MULTI_FAMILY for that label is the open taxonomy decision;
+     * until the create screen offers the two separately, the ambiguous label is left intact and the
+     * read-side aliases keep it findable under both.
+     */
+    public static Optional<BuildingType> canonicalFor(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        String token = value.trim().toLowerCase().replace(' ', '_').replace('-', '_');
+        List<BuildingType> matches = Arrays.stream(values())
+                .filter(type -> type.matchTokens().contains(token))
+                .toList();
+        return matches.size() == 1 ? Optional.of(matches.get(0)) : Optional.empty();
     }
 }

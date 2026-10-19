@@ -4,6 +4,7 @@ import com.landgo.coreservice.dto.request.LandCreateRequest;
 import com.landgo.coreservice.dto.response.ApiResponse;
 import com.landgo.coreservice.dto.response.LandResponse;
 import com.landgo.coreservice.dto.response.PageResponse;
+import com.landgo.coreservice.enums.ArrangementType;
 import com.landgo.coreservice.enums.LandStatus;
 import com.landgo.coreservice.enums.ProjectStage;
 import com.landgo.coreservice.enums.ProjectType;
@@ -125,6 +126,16 @@ public class LandController {
         return ResponseEntity.ok(ApiResponse.success(options));
     }
 
+    @GetMapping("/filter-options/arrangement-type")
+    @Operation(summary = "Get available commercial arrangement options",
+               description = "Joint Venture and Builder Takeover. These are how a project is handed over, not how it is transacted - a listing can be both an arrangement and a sale, so this is separate from listing-type.")
+    public ResponseEntity<ApiResponse<List<String>>> getArrangementTypeOptions() {
+        List<String> options = Arrays.stream(ArrangementType.values())
+                .map(ArrangementType::name)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.success(options));
+    }
+
     @GetMapping("/filter-options/listing-type")
     @Operation(summary = "Get available listing type options")
     public ResponseEntity<ApiResponse<List<String>>> getListingTypeOptions() {
@@ -156,6 +167,7 @@ public class LandController {
             @RequestParam(required = false) Integer forSaleSince,
             @RequestParam(required = false) Integer soldSince,
             @RequestParam(required = false) List<String> zoningCode,
+            @RequestParam(required = false) List<String> arrangementType,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDir,
             @RequestParam(defaultValue = "0") int page,
@@ -167,11 +179,13 @@ public class LandController {
         List<ZoningType> parsedZoningTypes = parseEnumList(ZoningType.class, zoningType, "zoningType");
         List<ListingType> parsedListingTypes = parseEnumList(ListingType.class, listingType, "listingType");
         List<LandStatus> parsedStatuses = parseEnumList(LandStatus.class, status, "status");
+        List<ArrangementType> parsedArrangementTypes =
+                parseEnumList(ArrangementType.class, arrangementType, "arrangementType");
 
         PageResponse<LandResponse> lands = landService.filterLands(
                 city, q, parsedStages, minPrice, maxPrice, minLotSize, maxLotSize, isFeatured, isHotDeal,
                 parsedProjectTypes, parsedBuildingTypes, parsedZoningTypes, parsedListingTypes,
-                parsedStatuses, forSaleSince, soldSince, zoningCode,
+                parsedStatuses, forSaleSince, soldSince, zoningCode, parsedArrangementTypes,
                 sortBy, sortDir, page, size, userId);
         return ResponseEntity.ok(ApiResponse.success(lands));
     }

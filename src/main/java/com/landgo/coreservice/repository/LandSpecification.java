@@ -1,6 +1,7 @@
 package com.landgo.coreservice.repository;
 
 import com.landgo.coreservice.entity.Land;
+import com.landgo.coreservice.enums.ArrangementType;
 import com.landgo.coreservice.enums.ProjectStage;
 import com.landgo.coreservice.enums.ProjectType;
 import com.landgo.coreservice.enums.BuildingType;
@@ -142,12 +143,20 @@ public class LandSpecification {
         };
     }
 
+    /**
+     * Lower bound in acres.
+     *
+     * <p>Compares the generated acre column, not the raw lot_size: the bounds come from an acreage
+     * input, while listings are stored in whatever unit the seller chose, so comparing the raw
+     * number made "1 to 2 acres" exclude a lot entered as 43560 SQFT and include one of 43560
+     * acres.
+     */
     public static Specification<Land> hasMinLotSize(BigDecimal minLotSize) {
         return (root, query, cb) -> {
             if (minLotSize == null) {
                 return cb.conjunction();
             }
-            return cb.ge(root.get("lotSize"), minLotSize);
+            return cb.ge(root.get("lotSizeAcres"), minLotSize);
         };
     }
 
@@ -156,7 +165,7 @@ public class LandSpecification {
             if (maxLotSize == null) {
                 return cb.conjunction();
             }
-            return cb.le(root.get("lotSize"), maxLotSize);
+            return cb.le(root.get("lotSizeAcres"), maxLotSize);
         };
     }
 
@@ -248,6 +257,24 @@ public class LandSpecification {
             
             // Should match AT LEAST ONE of the provided zoning types (OR)
             return cb.or(predicates);
+        };
+    }
+
+    /**
+     * Commercial arrangement - joint venture, builder takeover - as opposed to the transaction.
+     *
+     * <p>Reads {@code sellingType} alongside the canonical {@code arrangementType} because every
+     * listing stored before the split put the arrangement in the selling type, which is also where
+     * the create screen still sends it.
+     */
+    public static Specification<Land> hasArrangementTypes(java.util.List<ArrangementType> arrangementTypes) {
+        return (root, query, cb) -> {
+            if (arrangementTypes == null || arrangementTypes.isEmpty()) return cb.conjunction();
+            java.util.Set<String> tokens = new java.util.LinkedHashSet<>();
+            arrangementTypes.forEach(at -> tokens.addAll(at.matchTokens()));
+            return cb.or(
+                    normalizedSpecField(root, cb, "arrangementType").in(tokens),
+                    normalizedSpecField(root, cb, "sellingType").in(tokens));
         };
     }
 

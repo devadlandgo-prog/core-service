@@ -2,6 +2,7 @@ package com.landgo.coreservice.enums;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -37,5 +38,20 @@ public enum ListingType {
         tokens.add(name().toLowerCase());
         tokens.addAll(legacyTokens);
         return tokens;
+    }
+
+    /**
+     * The transaction type a submitted label denotes, for normalising a listing on write. Empty for
+     * an unrecognised label, which is then stored as sent rather than guessed at, and for the
+     * arrangements - see {@link ArrangementType}.
+     */
+    public static Optional<ListingType> canonicalFor(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        String token = value.trim().toLowerCase().replace(' ', '_').replace('-', '_');
+        return Arrays.stream(values())
+                .filter(type -> type.matchTokens().contains(token))
+                .findFirst();
     }
 }
