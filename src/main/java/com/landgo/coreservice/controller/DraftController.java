@@ -27,8 +27,12 @@ public class DraftController {
 
     @PostMapping
     @Operation(summary = "Create a new draft", description = "Creates an empty draft for the authenticated vendor.")
-    public ResponseEntity<ApiResponse<DraftResponse>> createDraft(@CurrentUser UUID userId) {
-        DraftResponse draft = draftService.createDraft(userId);
+    public ResponseEntity<ApiResponse<DraftResponse>> createDraft(
+            @CurrentUser UUID userId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            com.landgo.coreservice.security.UserPrincipal principal) {
+        boolean isAdmin = principal != null && principal.getRole() == com.landgo.coreservice.enums.Role.ADMIN;
+        DraftResponse draft = draftService.createDraft(userId, isAdmin);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Draft created successfully", draft));
     }

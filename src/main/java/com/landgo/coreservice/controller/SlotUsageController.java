@@ -24,8 +24,12 @@ public class SlotUsageController {
 
     @GetMapping("/mine/slot-usage")
     @Operation(summary = "Get listing slot usage details", description = "Returns active, pending, draft, total listing counts and max limit for the current user.")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getSlotUsage(@CurrentUser UUID userId) {
-        Map<String, Object> usage = landService.getSlotUsage(userId);
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getSlotUsage(
+            @CurrentUser UUID userId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+            com.landgo.coreservice.security.UserPrincipal principal) {
+        boolean isAdmin = principal != null && principal.getRole() == com.landgo.coreservice.enums.Role.ADMIN;
+        Map<String, Object> usage = landService.getSlotUsage(userId, isAdmin);
         return ResponseEntity.ok(ApiResponse.success(usage));
     }
 }

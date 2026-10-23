@@ -30,21 +30,27 @@ public class ListingDraftService {
     private final UserServiceClient userServiceClient;
 
     @Transactional
-    public DraftResponse createDraft(UUID userId) {
+    public DraftResponse createDraft(UUID userId, boolean isAdmin) {
         // A draft costs nothing — the credit is spent when the listing is actually posted. But
         // letting someone fill in a whole listing they have no credit to publish wastes their
         // time, so the balance is checked up front. Drafts already in progress count against it,
         // since each one will need its own credit at submission.
-        UserServiceClient.ListingCredits credits = userServiceClient.getListingCredits(userId);
-        if (credits != null) {
-            long draftsInProgress =
-                    draftRepository.countByOwnerIdAndStatusAndDeletedFalse(userId, DraftStatus.IN_PROGRESS);
-            if (credits.available() - draftsInProgress <= 0) {
-                throw new com.landgo.coreservice.exception.BadRequestException(
-                    "You have no listing credits left. Buy a land listing package to start another "
-                            + "listing — credits never expire.",
-                    "NO_LISTING_CREDITS"
-                );
+        //
+        // An admin has no balance and spends nothing at submission either, so there is no wasted
+        // time to protect them from: this is the first wall they hit when adding a listing from the
+        // dashboard, before the create endpoint is ever reached.
+        if (!isAdmin) {
+            UserServiceClient.ListingCredits credits = userServiceClient.getListingCredits(userId);
+            if (credits != null) {
+                long draftsInProgress =
+                        draftRepository.countByOwnerIdAndStatusAndDeletedFalse(userId, DraftStatus.IN_PROGRESS);
+                if (credits.available() - draftsInProgress <= 0) {
+                    throw new com.landgo.coreservice.exception.BadRequestException(
+                        "You have no listing credits left. Buy a land listing package to start another "
+                                + "listing — credits never expire.",
+                        "NO_LISTING_CREDITS"
+                    );
+                }
             }
         }
 

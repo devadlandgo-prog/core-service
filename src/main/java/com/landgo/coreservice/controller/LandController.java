@@ -46,8 +46,10 @@ public class LandController {
     @Operation(summary = "Create a new land listing", description = "Allows vendors to create a new land listing. Status will be PENDING_APPROVAL by default.")
     public ResponseEntity<ApiResponse<LandResponse>> createLand(
             @CurrentUser UUID userId,
+            @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody LandCreateRequest request) {
-        LandResponse land = landService.createLand(request, userId);
+        boolean isAdmin = principal != null && principal.getRole() == com.landgo.coreservice.enums.Role.ADMIN;
+        LandResponse land = landService.createLand(request, userId, isAdmin);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Land listing created successfully", land));
     }

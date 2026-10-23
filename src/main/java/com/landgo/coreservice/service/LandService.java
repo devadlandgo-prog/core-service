@@ -66,18 +66,30 @@ public class LandService {
     @org.springframework.beans.factory.annotation.Value("${app.mail.company-address:LandGo, Ontario, Canada}")
     private String companyAddress;
 
+    /**
+     * What an admin's listing allowance reports as. Admins do not draw on the credit ledger at all;
+     * this is only so a dashboard that renders a number has one that does not read as "none left".
+     */
+    private static final int UNLIMITED_LISTING_CREDITS = 1_000_000;
+
     @Transactional
-    public LandResponse createLand(LandCreateRequest request, UUID vendorId) {
-        log.debug("Creating land for vendorId: {}", vendorId);
+    public LandResponse createLand(LandCreateRequest request, UUID vendorId, boolean isAdmin) {
+        log.debug("Creating land for vendorId: {} (admin={})", vendorId, isAdmin);
 
         // Posting a listing costs one credit. Checked here, before any work, so a user with no
         // credits gets a clear message rather than a listing that fails to publish later.
-        UserServiceClient.ListingCredits credits = userServiceClient.getListingCredits(vendorId);
-        if (credits != null && credits.available() <= 0) {
-            throw new com.landgo.coreservice.exception.BadRequestException(
-                    "You have no listing credits left. Buy a land listing package to post another "
-                            + "listing — credits never expire.",
-                    "NO_LISTING_CREDITS");
+        //
+        // Credits are a selling constraint on vendors, not a permission check, and an admin posting
+        // from the dashboard has no package to buy: the check blocked them outright. Admins skip it
+        // and spend nothing below.
+        if (!isAdmin) {
+            UserServiceClient.ListingCredits credits = userServiceClient.getListingCredits(vendorId);
+            if (credits != null && credits.available() <= 0) {
+                throw new com.landgo.coreservice.exception.BadRequestException(
+                        "You have no listing credits left. Buy a land listing package to post another "
+                                + "listing — credits never expire.",
+                        "NO_LISTING_CREDITS");
+            }
         }
 
         // MLS Validation logic
@@ -104,7 +116,13 @@ public class LandService {
         // paid for and a retried submission of the same listing cannot spend twice. Deleting,
         // rejecting or expiring the listing does not give the credit back — an admin reversal is
         // the only route, and it is audited.
-        userServiceClient.consumeListingCredit(vendorId, saved.getId(), "listing.create:" + saved.getId());
+        //
+        // Nothing is spent for an admin: there is no balance to draw down, and writing a debit
+        // against an account that never bought a package would make the ledger lie about what was
+        // sold.
+        if (!isAdmin) {
+            userServiceClient.consumeListingCredit(vendorId, saved.getId(), "listing.create:" + saved.getId());
+        }
 
         sendListingStatusEmail(saved, LandStatus.PENDING_APPROVAL, null);
         return getLandResponseWithFavorite(saved, vendorId);
@@ -630,13 +648,13 @@ public class LandService {
      * descriptive; they are deliberately not used to compute what is left, because deleting a
      * listing does not return its credit and counting live listings would imply that it does.
      */
-    public Map<String, Object> getSlotUsage(UUID userId) {
+    public Map<String, Object> getSlotUsage(UUID userId, boolean isAdmin) {
         long draft = draftRepository.countByOwnerIdAndStatusAndDeletedFalse(userId, com.landgo.coreservice.enums.DraftStatus.IN_PROGRESS);
         long pending = landRepository.countByVendorIdAndStatusAndDeletedFalse(userId, LandStatus.PENDING_APPROVAL);
         long live = landRepository.countActiveListingsByVendorId(userId);
         long total = landRepository.countAllByVendorIdAndDeletedFalse(userId) + draft;
 
-        UserServiceClient.ListingCredits credits = userServiceClient.getListingCredits(userId);
+        UserServiceClient.ListingCredits credits = isAdmin ? null : userServiceClient.getListingCredits(userId);
         int purchased = credits != null ? credits.purchased() : 0;
         int used = credits != null ? credits.used() : 0;
         int available = credits != null ? credits.available() : 0;
@@ -647,15 +665,23 @@ public class LandService {
         usage.put("live", live);
         usage.put("total", total);
 
-        usage.put("creditsPurchased", purchased);
-        usage.put("creditsUsed", used);
-        usage.put("creditsAvailable", available);
+        // An admin has no balance to report, and 0 would be read as "none left" by a dashboard that
+        // greys out its add button on this number - the same block the create endpoint no longer
+        // applies. Deliberately a large sentinel rather than null: a client comparing
+        // `remainingSlots <= 0` treats null as 0 in JavaScript and would still block, so null would
+        // fix the API and leave the button dead. UNLIMITED_LISTING_CREDITS matches the magnitude
+        // payment-service already returns for an unlimited plan, and `unlimited` is there for a
+        // client that would rather read the flag than the number.
+        usage.put("unlimited", isAdmin);
+        usage.put("creditsPurchased", isAdmin ? UNLIMITED_LISTING_CREDITS : purchased);
+        usage.put("creditsUsed", isAdmin ? 0 : used);
+        usage.put("creditsAvailable", isAdmin ? UNLIMITED_LISTING_CREDITS : available);
         usage.put("creditsNeverExpire", true);
 
         // Legacy names, kept so existing clients keep rendering. Both now report the credit
         // balance rather than a plan tier's allowance.
-        usage.put("maxListings", purchased);
-        usage.put("remainingSlots", available);
+        usage.put("maxListings", isAdmin ? UNLIMITED_LISTING_CREDITS : purchased);
+        usage.put("remainingSlots", isAdmin ? UNLIMITED_LISTING_CREDITS : available);
         return usage;
     }
 
