@@ -31,6 +31,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.landgo.coreservice.util.TransactionTypeValidator;
+
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -105,6 +107,9 @@ public class LandService {
         }
 
         Land land = landMapper.toEntity(request);
+        // After the mapper, so the create screens' labels are already canonical and "Land Sale"
+        // counts as a transaction type.
+        TransactionTypeValidator.validate(land.getProjectSpecification());
         land.setVendorId(vendorId);
         land.setStatus(LandStatus.PENDING_APPROVAL);
         land.setViewCount(0);
@@ -387,6 +392,13 @@ public class LandService {
         }
 
         landMapper.updateEntity(request, land);
+        // Only when this request carries a specification. An edit that does not touch it - fixing a
+        // title, correcting a price - must not be blocked because the listing predates the rule and
+        // has no transaction type to supply. Any request that does write the specification has to
+        // write a complete one.
+        if (request.getProjectSpecification() != null) {
+            TransactionTypeValidator.validate(land.getProjectSpecification());
+        }
         Land saved = landRepository.save(land);
 
         if (resubmitted) {

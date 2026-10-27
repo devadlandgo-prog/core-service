@@ -12,7 +12,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiResponse<Void>> handleApiException(ApiException ex) {
         log.warn("API Exception: {} - Code: {}", ex.getMessage(), ex.getErrorCode());
-        return ResponseEntity.status(ex.getStatus()).body(ApiResponse.error(ex.getMessage(), ex.getErrorCode()));
+        return ResponseEntity.status(ex.getStatus())
+                .body(ApiResponse.error(ex.getMessage(), ex.getErrorCode(), ex.getDetails()));
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
