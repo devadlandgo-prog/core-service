@@ -392,13 +392,12 @@ public class LandService {
         }
 
         landMapper.updateEntity(request, land);
-        // Only when this request carries a specification. An edit that does not touch it - fixing a
-        // title, correcting a price - must not be blocked because the listing predates the rule and
-        // has no transaction type to supply. Any request that does write the specification has to
-        // write a complete one.
-        if (request.getProjectSpecification() != null) {
-            TransactionTypeValidator.validate(land.getProjectSpecification());
-        }
+        // Every update, not only those that carry a specification. A listing that predates the
+        // requirement has no transaction type, so an edit to it fails until the owner supplies one
+        // - which is the intent: the edit screen asks, and the gap closes as listings are touched
+        // rather than being backfilled with a guess. Validated after the mapper, so this reads the
+        // incoming specification when the request has one and the stored one when it does not.
+        TransactionTypeValidator.validate(land.getProjectSpecification());
         Land saved = landRepository.save(land);
 
         if (resubmitted) {

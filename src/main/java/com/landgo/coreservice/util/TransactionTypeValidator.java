@@ -23,6 +23,12 @@ import java.util.Map;
  *
  * <p>Runs after {@link ProjectSpecificationNormalizer}, so the display labels the create screens
  * send are already canonical by the time they get here and "Land Sale" satisfies the requirement.
+ *
+ * <p>Enforced on create and on every update, including updates by an admin: a transaction type is
+ * data quality rather than an entitlement, and a listing an admin posts is as unfilterable without
+ * one as any other. Drafts are exempt - a half-finished listing is the point of a draft - and reads
+ * are untouched, so a listing stored before the requirement keeps returning exactly what it holds
+ * until someone edits it.
  */
 public final class TransactionTypeValidator {
 
